@@ -1,0 +1,3 @@
+- Items/NPCs marked "(already interacted)" have already been visited
+- Warps marked "(you just exited here, explore elsewhere)" mean you just came from there. Do not go back immediately. Explore other options, talk to other NPCs, or head in a new direction instead
+- Routes and caves are the stretch between two towns. Pokemon Centers and Poke Marts are in the towns, so when you are partway across one and running low, the town ahead of you is usually as close as the one behind you, and it is somewhere you have not been yet. Losing a battle or getting worn down partway through is not a reason to turn back. Keep going forward and heal on the other side

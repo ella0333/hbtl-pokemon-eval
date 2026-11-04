@@ -1,0 +1,17 @@
+{
+  "Pallet Town": "Pallet Town is your starting town. Professor Oak's Lab and your house are here. Route 1 is NORTH, that's the only way to progress. There is nothing south, east, or west.",
+  "Route 1": "Route 1 connects Pallet Town (south) to Viridian City (north). To progress in the game, go NORTH toward Viridian City. Going south just returns to Pallet Town where you started.",
+  "Viridian City": "Viridian City is the first city after Pallet Town. To progress, go NORTH to Route 2 which leads to Viridian Forest and then Pewter City (first gym). Route 1 south goes BACK to Pallet Town, don't go there unless you have a reason. Route 22 west leads toward the Pokemon League but is blocked until endgame.",
+  "Route 2": "Route 2 connects Viridian City (south) to Viridian Forest and eventually Pewter City. Keep going NORTH to progress. Going south returns to Viridian City.",
+  "Viridian Forest": "Viridian Forest is a maze-like forest between Route 2 sections. Bug-type Pokemon live here (Caterpie, Weedle, Pikachu). Navigate through it heading generally NORTH to reach the exit to Pewter City.",
+  "Pewter City": "Pewter City has the first gym (Brock, Rock-type). Visit the Pewter Gym to earn your first badge. Route 3 is EAST, that's the way to progress after beating Brock. The museum is here too.",
+  "Route 3": "Route 3 goes east from Pewter City toward Mt Moon. There are several trainers to battle along this route. Keep heading EAST to progress. Heal and stock up in Pewter City BEFORE you set out, because once you're on Route 3 the next Pokemon Center is the small one at the Mt Moon entrance, and after that it's Cerulean City on the far side.",
+  "Mt Moon": "Mt Moon is a three-level cave connecting Route 3 to Route 4. The way through is DOWN: find the ladder to B1F, then B2F, then the exit on the east side that puts you on Route 4, with Cerulean City just beyond it. Team Rocket is inside and there are fossils to find. It is a long cave and you will get into a lot of wild battles crossing it, which is normal. Do not turn around and go back to Pewter City after one or two fights. Push forward through the cave. Cerulean City on the far side has a Pokemon Center and a Poke Mart, and reaching it is the whole point of going in.",
+  "Route 4": "Route 4 connects the east exit of Mt Moon to Cerulean City. Head EAST to reach Cerulean City, where there is a Pokemon Center and a Poke Mart.",
+  "Cerulean City": "Cerulean City has the second gym (Misty, Water-type). Route 24/Nugget Bridge is NORTH. After the gym, progress SOUTH via Route 5 toward Vermilion City, or explore Route 24/25 north first.",
+  "Route 24": "Nugget Bridge, a straight path north with 5 trainers in a row. Leads to Route 25 at the top. Cross the bridge heading NORTH.",
+  "Route 25": "Route 25 leads east to Bill's house (Sea Cottage). You need to visit Bill to progress the story. Head EAST.",
+  "Route 5": "Route 5 connects Cerulean City (north) to Saffron City gate / underground path. Head SOUTH to progress toward Vermilion City.",
+  "Route 6": "Route 6 connects the underground path exit to Vermilion City. Head SOUTH to reach Vermilion City.",
+  "Vermilion City": "Vermilion City has the third gym (Lt. Surge, Electric-type). The S.S. Anne is at the harbor (you need a ticket). Route 11 is EAST. After getting HM01 Cut from the S.S. Anne captain, you can challenge Lt. Surge's gym."
+}

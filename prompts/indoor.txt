@@ -1,0 +1,8 @@
+[movement_rule]
+- You are currently INDOORS. Do NOT use North/South/East/West directions while inside buildings, they will make you walk past NPCs and objects. Instead, ONLY select from the Nearby list to interact with people and objects inside. Use door/warp options to move between rooms or exit
+
+[navigation_tips]
+- The Nearby list includes everyone and everything inside this building, always pick from it to interact
+- To talk to an NPC (like a Nurse, Clerk, or Trainer), select them from the Nearby list, do NOT walk North/South/East/West toward them
+
+[navigation_hints]

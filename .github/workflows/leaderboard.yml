@@ -1,0 +1,60 @@
+name: Leaderboard
+
+on:
+  pull_request:
+    paths:
+      - "submissions/**"
+  push:
+    branches: [master]
+    paths:
+      - "submissions/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check the submitted run folders
+        run: |
+          git fetch origin "${{ github.base_ref }}"
+          folders=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- submissions/ \
+            | awk -F/ 'NF > 2 {print $1"/"$2}' | sort -u)
+          if [ -z "$folders" ]; then
+            echo "No run folders changed."
+            exit 0
+          fi
+          python tools/check_submission.py $folders
+
+  rebuild:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Rebuild the leaderboard
+        run: python tools/check_submission.py --leaderboard
+      - name: Commit the leaderboard
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add leaderboard.json LEADERBOARD.md README.md
+          if git diff --cached --quiet; then
+            echo "Leaderboard unchanged."
+          else
+            git commit -m "Update leaderboard"
+            git push
+          fi

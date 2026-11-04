@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Config and secrets
+config.yaml
+.env
+
+# Downloaded tools, staged runs and the map database
+/runtime/
+
+# Your own runs and saves
+/results/
+/saves/
+
+# ROMs and save files (checkpoints and submitted runs keep theirs)
+*.gb
+*.gbc
+*.gba
+*.sav
+!checkpoints/**/*.sav
+!submissions/**/*.sav
+*.sgm
+
+# IDE
+.vscode/
+.idea/

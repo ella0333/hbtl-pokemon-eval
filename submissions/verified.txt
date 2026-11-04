@@ -1,0 +1,1 @@
+# One submission folder name per line, for runs whose logs have been checked.

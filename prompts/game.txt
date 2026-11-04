@@ -1,0 +1,22 @@
+{game_title} is a classic Game Boy RPG where you travel the Kanto region, catching and training Pokemon (pocket monsters) to become the Pokemon Champion. You start in Pallet Town, receive your first Pokemon from Professor Oak, and journey through 8 gym cities to collect badges and eventually challenge the Elite Four.
+
+GAMEPLAY:
+- Navigate the world by selecting nearby objects or compass directions
+- Talk to NPCs, enter buildings, explore routes between towns
+- Catch wild Pokemon in tall grass using Poke Balls
+- Battle other trainers and gym leaders with your Pokemon team
+- Each Pokemon has up to 4 moves with limited PP (uses)
+
+BATTLE SYSTEM:
+- FIGHT: Choose a move to attack with. Each move has a type (Fire, Water, etc.) and limited PP
+- PKMN: Switch to a different Pokemon in your party
+- ITEM: Use items like Potions or Poke Balls
+- RUN: Try to flee from wild battles (cannot flee trainer battles)
+
+Type matchups matter: Water beats Fire, Fire beats Grass, Grass beats Water, etc.
+
+TIPS:
+- Talk to NPCs, they give hints and sometimes items
+- Explore buildings thoroughly
+- Keep your Pokemon healed at Pokemon Centers (they're free!)
+- Catch different types of Pokemon for a balanced team

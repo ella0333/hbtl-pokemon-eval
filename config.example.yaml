@@ -1,0 +1,26 @@
+# setup.py writes config.yaml in this shape. Safe to edit by hand.
+provider:
+  kind: openai_compat
+  base_url: https://openrouter.ai/api/v1   # LM Studio: http://127.0.0.1:1234, Ollama: http://127.0.0.1:11434
+  api_key_env: MODEL_API_KEY               # name of the variable in .env ("" for local servers)
+  model: openai/gpt-5.6-luna
+  request_timeout: 300
+  quirks:
+    no_think_suffix: false                 # append /no_think for Qwen builds that need it
+model_params:
+  temperature: 0.7
+  top_p: 0.95
+  max_tokens: 3000
+prices:                                    # only used when the provider doesn't report cost
+  input_per_million: 0.0
+  output_per_million: 0.0
+game: red                                  # red or blue
+rom: C:\path\to\Pokemon - Red Version (USA, Europe) (SGB Enhanced).gb
+hints: []                                  # any of: navigation, stuck_notes, battle_tips,
+                                           # item_descriptions, location_tips, story_notes
+images: false                              # send a screenshot of the first battle
+run:
+  call_cap: 1000
+  target: pokedex                          # pokedex, badge_1 ... badge_8, hall_of_fame
+  start: new_game                          # new_game, or a checkpoint name like badge_2
+  save_mode: new                           # new, continue, or slots

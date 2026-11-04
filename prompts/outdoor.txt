@@ -1,0 +1,10 @@
+[movement_rule]
+- North/South/East/West are ONLY for exploring beyond what's currently listed, to discover new areas or NPCs not yet on screen. If there are NPCs, doors, signs, or items in the Nearby list, interact with those first before using directionals
+
+[navigation_tips]
+- To reach new areas, you may need to walk in the same direction multiple times
+- Directional movement (North/South/East/West) will navigate around obstacles automatically, so the actual path may zig-zag. It may take several consecutive directional moves to make real progress. The result will tell you how many tiles you moved
+- Even outdoors, always check the Nearby list first. If your destination (a door, NPC, sign, item) is listed, select it directly instead of walking in its general direction
+
+[navigation_hints]
+- If you feel lost or want to make progress, try heading North, most of the game progresses northward through the Kanto region
