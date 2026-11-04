@@ -83,7 +83,9 @@ components, which are not part of this repo and keep their own terms:
 | **[pokemon-access](https://github.com/nuive/pokemon-access)** | None published | Screen reader scripts the Lua bridge reads the game through, commit 2deb98f (version 3.1.0) |
 | **[pret/pokered](https://github.com/pret/pokered)** | None published | The disassembly the map database is built from, at a pinned commit |
 
-Pokemon is a trademark of Nintendo, Creatures and Game Freak. This repo contains no ROMs.
+Pokemon is a trademark of Nintendo, Creatures and Game Freak. This project is not
+affiliated with or endorsed by Nintendo, Creatures or Game Freak, and this repo contains
+no ROMs.
 
 ---
 
