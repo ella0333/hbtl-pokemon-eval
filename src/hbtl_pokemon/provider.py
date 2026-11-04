@@ -193,19 +193,7 @@ class Provider:
                 system_parts.append(msg["content"])
                 continue
             content = msg["content"]
-            if isinstance(content, list):
-                blocks = []
-                for part in content:
-                    if part.get("type") == "image_url":
-                        uri = part["image_url"]["url"]
-                        media, data = uri[5:].split(";base64,", 1)
-                        blocks.append({"type": "image", "source": {
-                            "type": "base64", "media_type": media, "data": data}})
-                    else:
-                        blocks.append({"type": "text", "text": part.get("text", "")})
-                content = blocks
-            if merged and merged[-1]["role"] == msg["role"] and isinstance(content, str) \
-                    and isinstance(merged[-1]["content"], str):
+            if merged and merged[-1]["role"] == msg["role"]:
                 merged[-1]["content"] += "\n\n" + content
             else:
                 merged.append({"role": msg["role"], "content": content})

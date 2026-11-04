@@ -1,4 +1,4 @@
-"""The run folder: logs, screenshots, saves, run_state.json and summary.json."""
+"""The run folder: logs, saves, run_state.json and summary.json."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 RESULTS = ROOT / "results"
 
-# Files a finished run must contain. Screenshots and saves are optional.
+# Files a finished run must contain. Saves are optional.
 REQUIRED_FILES = ("summary.json", "model_calls.jsonl", "events.jsonl", "inputs.jsonl")
 
 MILESTONES = ["pokedex"] + [f"badge_{i}" for i in range(1, 9)] + ["hall_of_fame"]
@@ -63,7 +63,6 @@ class RunFolder:
     def __init__(self, path: Path):
         self.path = Path(path)
         self.path.mkdir(parents=True, exist_ok=True)
-        (self.path / "screenshots").mkdir(exist_ok=True)
         (self.path / "saves").mkdir(exist_ok=True)
         for name in ("model_calls.jsonl", "events.jsonl", "inputs.jsonl"):
             (self.path / name).touch()

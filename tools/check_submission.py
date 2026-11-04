@@ -160,7 +160,6 @@ def _row(folder: Path, summary: dict, verified: set) -> dict:
         "target": MILESTONE_LABELS[summary["target"]],
         "target_rank": MILESTONES.index(summary["target"]),
         "hints": "Off" if not hints else ", ".join(h.replace("_", " ") for h in hints),
-        "images": "On" if summary.get("images") else "Off",
         "success": bool(summary.get("success")),
         "calls": summary["calls"],
         "cost_usd": round(float(summary["cost_usd"]), 4),
@@ -173,11 +172,11 @@ def _money(value: float) -> str:
 
 
 def _table(rows: list[dict]) -> str:
-    lines = ["| Model | Game | Start | Target | Hints | Images | Success | Calls | Cost | Status |",
-             "|---|---|---|---|---|---|---|---|---|---|"]
+    lines = ["| Model | Game | Start | Target | Hints | Success | Calls | Cost | Status |",
+             "|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
         lines.append(f"| {r['model']} | {r['game']} | {r['start']} | {r['target']} | {r['hints']} | "
-                     f"{r['images']} | {'Yes' if r['success'] else 'No'} | {r['calls']} | "
+                     f"{'Yes' if r['success'] else 'No'} | {r['calls']} | "
                      f"{_money(r['cost_usd'])} | {r['status']} |")
     return "\n".join(lines)
 

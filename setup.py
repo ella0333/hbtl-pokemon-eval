@@ -179,9 +179,6 @@ def _ask_config() -> dict:
             if _yesno(HINT_LABELS[group], default=False):
                 hints_on.append(group)
 
-    images = _yesno("Send the model a screenshot of its first battle? Text-only models need this off",
-                    default=False)
-
     _say("")
     call_cap = _integer("Call cap (most model calls a run can make, 0 for no cap)", 1000)
     target = _choice("Where should the run end?",
@@ -219,7 +216,6 @@ def _ask_config() -> dict:
         "game": game,
         "rom": str(Path(rom).resolve()),
         "hints": hints_on,
-        "images": images,
         "run": {"call_cap": call_cap, "target": target, "start": start, "save_mode": save_mode},
     }
 
@@ -241,16 +237,9 @@ async def _probe(config: dict) -> str:
         "choice": {"type": "string", "enum": ["A", "B"]}},
         "required": ["thinking", "choice"], "additionalProperties": False}
     text = "Current Location - Pallet Town\n\nNearby:\nA. Oak's Lab (door) - 6 Down 3 Right\nB. Sign - 2 Up"
-    content = text
-    if config.get("images"):
-        from PIL import Image
-
-        from hbtl_pokemon.game import image_to_data_uri
-        content = [{"type": "text", "text": text},
-                   {"type": "image_url", "image_url": {"url": image_to_data_uri(Image.new("RGB", (160, 144), "white"))}}]
     messages = [
         {"role": "system", "content": "You are playing Pokemon. Pick one lettered choice."},
-        {"role": "user", "content": content},
+        {"role": "user", "content": text},
     ]
     async with httpx.AsyncClient() as client:
         reply, error = await provider.generate(client, messages, schema, turn=0)
@@ -273,9 +262,6 @@ async def _probe(config: dict) -> str:
             or "structured" in lower or "tool_choice" in lower:
         return (f"The model can't return strict JSON for the game's schema ({error}). Models "
                 f"without structured output aren't compatible; see docs/models.md.")
-    if "image" in lower or "vision" in lower or "multimodal" in lower:
-        return (f"The model refused the screenshot ({error}). Run setup again and turn the "
-                f"first-battle screenshot off.")
     return f"The connection check failed: {error}"
 
 

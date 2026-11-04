@@ -18,7 +18,6 @@ game: red                                  # red or blue
 rom: C:\path\to\Pokemon - Red Version (USA, Europe) (SGB Enhanced).gb
 hints: []                                  # any of: navigation, stuck_notes, battle_tips,
                                            # item_descriptions, location_tips, story_notes
-images: false                              # send a screenshot of the first battle
 run:
   call_cap: 1000
   target: pokedex                          # pokedex, badge_1 ... badge_8, hall_of_fame

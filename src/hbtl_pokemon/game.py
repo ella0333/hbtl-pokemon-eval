@@ -13,10 +13,8 @@ Call configure() once before creating a PokemonGame.
 """
 
 import asyncio
-import base64
 import ctypes
 import ctypes.wintypes
-import io
 import json
 import re
 import subprocess
@@ -104,8 +102,6 @@ STATE_FILE = BRIDGE_DIR / "state.json"
 CMD_FILE = BRIDGE_DIR / "cmd.txt"
 TEXT_FILE = BRIDGE_DIR / "text.txt"
 INPUT_LOG_FILE = BRIDGE_DIR / "input_log.jsonl"
-SCREENSHOT_REQUEST = BRIDGE_DIR / "screenshot.req"
-SCREEN_FILE = BRIDGE_DIR / "screen.gd"
 MAP_DB_PATH = Path("map_database.json")
 
 # Hint groups. Each one is off unless configure() turns it on.
@@ -129,7 +125,7 @@ GAME = "red"
 def configure(vba_exe, lua_script, bridge_dir, map_db, game="red", hints=()):
     """Point the engine at one run's files and set the game and hint groups."""
     global VBA_EXE, LUA_SCRIPT, BRIDGE_DIR, STATE_FILE, CMD_FILE, TEXT_FILE
-    global INPUT_LOG_FILE, SCREENSHOT_REQUEST, SCREEN_FILE, MAP_DB_PATH, GAME
+    global INPUT_LOG_FILE, MAP_DB_PATH, GAME
     VBA_EXE = Path(vba_exe)
     LUA_SCRIPT = Path(lua_script)
     BRIDGE_DIR = Path(bridge_dir)
@@ -137,8 +133,6 @@ def configure(vba_exe, lua_script, bridge_dir, map_db, game="red", hints=()):
     CMD_FILE = BRIDGE_DIR / "cmd.txt"
     TEXT_FILE = BRIDGE_DIR / "text.txt"
     INPUT_LOG_FILE = BRIDGE_DIR / "input_log.jsonl"
-    SCREENSHOT_REQUEST = BRIDGE_DIR / "screenshot.req"
-    SCREEN_FILE = BRIDGE_DIR / "screen.gd"
     MAP_DB_PATH = Path(map_db)
     GAME = game
     HINTS.clear()
@@ -2536,54 +2530,6 @@ def _read_visible_item_list(state):
 
 
 # =========================================================================
-# Screenshot capture utility
-# =========================================================================
-
-def _decode_gd(data):
-    """Decode the truecolor GD image that gui.gdscreenshot() returns."""
-    from PIL import Image
-    if len(data) < 11 or data[:2] != b"\xff\xfe":
-        return None
-    width = int.from_bytes(data[2:4], "big")
-    height = int.from_bytes(data[4:6], "big")
-    size = width * height * 4
-    if not width or not height or len(data) < size + 6:
-        return None
-    image = Image.frombuffer("RGB", (width, height), data[-size:], "raw", "XRGB", 0, 1)
-    # Super Game Boy border: keep only the Game Boy screen
-    if (width, height) == (256, 224):
-        image = image.crop((48, 40, 208, 184))
-    return image
-
-
-def _current_frame(timeout=1.0):
-    """Ask the bridge for the current frame and return it as a PIL Image."""
-    try:
-        SCREEN_FILE.unlink()
-    except FileNotFoundError:
-        pass
-    SCREENSHOT_REQUEST.write_text("1", encoding="ascii")
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        try:
-            image = _decode_gd(SCREEN_FILE.read_bytes())
-            if image is not None:
-                return image.resize((160, 144))
-        except (OSError, ImportError):
-            pass
-        time.sleep(0.01)
-    return None
-
-
-def image_to_data_uri(img):
-    """Convert a PIL Image to a base64 data URI string."""
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    b64 = base64.b64encode(buf.getvalue()).decode("ascii")
-    return f"data:image/png;base64,{b64}"
-
-
-# =========================================================================
 # PokemonGame Class
 # =========================================================================
 
@@ -2870,8 +2816,7 @@ class PokemonGame:
             BRIDGE_DIR.mkdir(parents=True, exist_ok=True)
 
             # Clean up stale bridge files
-            for f in [STATE_FILE, CMD_FILE, TEXT_FILE, INPUT_LOG_FILE,
-                      SCREENSHOT_REQUEST, SCREEN_FILE]:
+            for f in [STATE_FILE, CMD_FILE, TEXT_FILE, INPUT_LOG_FILE]:
                 try:
                     f.unlink()
                 except FileNotFoundError:
@@ -5427,14 +5372,6 @@ class PokemonGame:
                 self.process = None
 
         await asyncio.to_thread(_quit_sync)
-
-    async def capture_screenshot(self):
-        """Grab the emulator's own frame from the bridge, as a PIL Image or None.
-
-        The frame comes from the Lua side, so it is correct even when the
-        VBA window is covered or minimised.
-        """
-        return await asyncio.to_thread(_current_frame)
 
     def has_save_files(self):
         """Check for existing .sav in ROM dir (where VBA loads from)."""

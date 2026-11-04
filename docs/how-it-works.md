@@ -76,13 +76,12 @@ and the calls it made after its last save still count. Time spent paused is not 
 
 Each run writes `results/run_<date>_<model>/` with:
 
-- `summary.json`: the model, endpoint, game, start, target, hints, image setting, outcome,
+- `summary.json`: the model, endpoint, game, start, target, hints, outcome,
   milestones and the call each was reached on, calls, tokens, cost, wall time, the harness
   commit, and a SHA-256 hash of every other file
 - `model_calls.jsonl`: every request and response, with token usage and cost
 - `events.jsonl`: every turn's game state, choices, answer, result, position and memory reads
 - `inputs.jsonl`: every button press, by frame
-- `screenshots/`: every 50 turns and at each milestone
 - `saves/`: the latest save and one per milestone
 
 A run with a call cap of 5 works as a pilot. Every summary includes the average cost per

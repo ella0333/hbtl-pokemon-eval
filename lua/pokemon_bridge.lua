@@ -1,8 +1,8 @@
 -- pokemon_bridge.lua
 -- IPC bridge that loads pokemon-access and exposes game state via files
 -- Writes: state.json (game state), text.txt (intercepted screen reader output),
---         input_log.jsonl (every pressed frame), screen.gd (frame on request)
--- Reads:  cmd.txt (commands from Python), screenshot.req (frame request)
+--         input_log.jsonl (every pressed frame)
+-- Reads:  cmd.txt (commands from Python)
 --
 -- The run loop copies this file into each run's folder and fills in the two
 -- paths below. Keep the bridge folder on a fast local disk: every file here is
@@ -817,24 +817,6 @@ local function build_state()
     return state
 end
 
----------------------------------------------------------------------------
--- Frame on request: Python writes screenshot.req, we answer with screen.gd.
--- A separate file from cmd.txt, because any command clears the tolk buffer.
----------------------------------------------------------------------------
-local SCREENSHOT_REQUEST = BRIDGE_DIR .. "screenshot.req"
-local function dump_screenshot()
-    local ok, gd = pcall(gui.gdscreenshot)
-    if not ok or type(gd) ~= "string" then return end
-    local tmp = BRIDGE_DIR .. "screen.tmp"
-    local f = io.open(tmp, "wb")
-    if f then
-        f:write(gd)
-        f:close()
-        os.remove(BRIDGE_DIR .. "screen.gd")
-        os.rename(tmp, BRIDGE_DIR .. "screen.gd")
-    end
-end
-
 -- A pathfinding error inside pokemon-access (a-star.lua) used to stop the
 -- whole script. Log it, drop the walk, and keep the bridge running.
 local function log_bridge_error(where, err)
@@ -1134,14 +1116,6 @@ while true do
     local ok_commands, command_error = pcall(process_commands)
     if not ok_commands then
         log_bridge_error("command", command_error)
-    end
-
-    -- Answer a frame request
-    local screenshot_request = io.open(SCREENSHOT_REQUEST, "r")
-    if screenshot_request then
-        screenshot_request:close()
-        os.remove(SCREENSHOT_REQUEST)
-        dump_screenshot()
     end
 
     -- Execute auto-walk

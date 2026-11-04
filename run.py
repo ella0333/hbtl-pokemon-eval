@@ -53,9 +53,8 @@ HISTORY_LIMIT = 24
 DIALOGUE_LIMIT = 500
 # A milestone counts once it reads as reached twice in a row.
 COMPLETION_CONFIRMATIONS = 2
-# In-game saves and screenshots, counted in turns.
+# In-game saves, counted in turns.
 SAVE_EVERY = 50
-SCREENSHOT_EVERY = 50
 
 RESUME_NOTE = ("[System: You are resuming from a saved game. Your progress has been "
                "automatically restored to where you left off. You do not need to redo the "
@@ -170,7 +169,6 @@ class Run:
         if self.game is not None:
             self.state["player_name"] = self.game.player_name
             self.state["rival_name"] = self.game.rival_name
-            self.state["first_battle_seen"] = self.game.first_battle_seen
         self.folder.write_json("run_state.json", self.state)
 
     def active_seconds(self) -> float:
@@ -197,7 +195,6 @@ class Run:
             "start": self.state["start"],
             "target": cfg["run"]["target"],
             "hints": sorted(cfg.get("hints") or []),
-            "images": bool(cfg.get("images")),
             "call_cap": cap,
             "start_reads": self.state.get("start_reads"),
             "milestones_at_start": self.state.get("milestones_at_start", []),
@@ -257,11 +254,6 @@ class Run:
             await asyncio.sleep(0.3)
         return False
 
-    async def screenshot(self, name: str) -> None:
-        image = await self.game.capture_screenshot()
-        if image is not None:
-            image.save(self.folder.path / "screenshots" / f"{name}.png")
-
     # ── milestones ───────────────────────────────────────────────────────
 
     async def check_milestones(self) -> None:
@@ -289,7 +281,6 @@ class Run:
                                "reads": confirmations})
             say(f"Milestone reached: {MILESTONE_LABELS[name]} "
                 f"(turn {self.state['turn']}, call {self.provider.calls})")
-            await self.screenshot(f"milestone_{name}")
 
     # ── the loop ─────────────────────────────────────────────────────────
 
@@ -369,19 +360,8 @@ class Run:
 
             system = prompt.system_prompt(self.game.current_location, self.game.player_name,
                                           self.game.rival_name, meta.get("is_outdoor", True))
-            content = text
-            if cfg.get("images") and meta.get("mode") == "battle" and not self.game.first_battle_seen:
-                self.game.first_battle_seen = True
-                image = await self.game.capture_screenshot()
-                if image is not None:
-                    image.save(self.folder.path / "screenshots" / "first_battle.png")
-                    content = [
-                        {"type": "text",
-                         "text": "[First Pokémon battle! Here's what it looks like:]\n\n" + text},
-                        {"type": "image_url", "image_url": {"url": engine.image_to_data_uri(image)}},
-                    ]
             messages = [{"role": "system", "content": system}, *history,
-                        {"role": "user", "content": content}]
+                        {"role": "user", "content": text}]
 
             try:
                 reply, error = await self.provider.generate(self.client, messages, schema, turn)
@@ -434,8 +414,6 @@ class Run:
             history.append({"role": "assistant", "content": answer})
             del history[:-HISTORY_LIMIT]
 
-            if turn % SCREENSHOT_EVERY == 0:
-                await self.screenshot(f"turn_{turn:05d}")
             self.persist()
 
             totals = self.provider.totals()
@@ -458,7 +436,6 @@ class Run:
         has_save = self.game.has_save_files()
         self.game.player_name = st.get("player_name", "")
         self.game.rival_name = st.get("rival_name", "")
-        self.game.first_battle_seen = st.get("first_battle_seen", False) or (has_save and not resume)
 
         if has_save and engine.hint("story_notes"):
             st["history"].append({"role": "user", "content": RESUME_NOTE})
