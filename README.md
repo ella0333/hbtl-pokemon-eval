@@ -55,7 +55,9 @@ common issues (wrong model name format, unsupported parameters).
 ## Leaderboard
 
 <!-- leaderboard:start -->
-No runs have been submitted yet.
+| Model | Game | Target | Hints | Success | Calls | Cost | Status |
+|---|---|---|---|---|---|---|---|
+| z-ai/glm-5.3-flash | Red | Pokedex from Oak | Off | Yes | 103 | $0.03 | Self-reported |
 <!-- leaderboard:end -->
 
 The full table is in [LEADERBOARD.md](LEADERBOARD.md).

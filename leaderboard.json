@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "submission": "run_20261104_030918_z-ai-glm-5-3-flash",
+    "model": "z-ai/glm-5.3-flash",
+    "game": "Red",
+    "target": "Pokedex from Oak",
+    "target_rank": 0,
+    "hints": "Off",
+    "success": true,
+    "calls": 103,
+    "cost_usd": 0.0268,
+    "status": "Self-reported"
+  }
+]

@@ -1,3 +1,4 @@
 vendor/** -text
 *.exe binary
 *.dll binary
+submissions/** -text

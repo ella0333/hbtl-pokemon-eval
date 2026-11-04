@@ -1,0 +1,65 @@
+{
+  "benchmark": "hbtl-pokemon-eval",
+  "outcome": "success",
+  "detail": "",
+  "success": true,
+  "model": "z-ai/glm-5.3-flash",
+  "endpoint": "https://openrouter.ai/api/v1",
+  "game": "red",
+  "start": "new_game",
+  "target": "pokedex",
+  "hints": [],
+  "call_cap": 0,
+  "start_reads": {
+    "has_pokedex": false,
+    "badges": 0,
+    "hof_teams": 0
+  },
+  "milestones_at_start": [],
+  "milestones": {
+    "pokedex": {
+      "turn": 103,
+      "call": 103,
+      "reads": [
+        {
+          "has_pokedex": true,
+          "badges": 0,
+          "hof_teams": 0
+        },
+        {
+          "has_pokedex": true,
+          "badges": 0,
+          "hof_teams": 0
+        }
+      ]
+    }
+  },
+  "turns": 103,
+  "calls": 103,
+  "tokens": {
+    "in": 245930,
+    "out": 11652,
+    "reasoning": 6437
+  },
+  "cost_usd": 0.026842,
+  "cost_source": "provider",
+  "average_cost_per_call_usd": 0.000261,
+  "projected_cost_at_cap_usd": null,
+  "wall_seconds": 1688.3,
+  "sessions": 2,
+  "model_params": {
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "max_tokens": 3000
+  },
+  "harness_commit": "b721cc281d354eba1e90e29dc9fd6fb7fbfed6cb",
+  "started": "2026-11-04T03:09:18",
+  "finished": "2026-11-04T15:52:20",
+  "files": {
+    "events.jsonl": "eed8c04370716fd5f887f092720ca7072b6a8097334b74ef631d6b5467b09922",
+    "inputs.jsonl": "e852855c1bb03d1ef301d9d53f7dd4a9f0d677b45695548fd49ddc4f940ec31c",
+    "model_calls.jsonl": "c1ad3ea4536adce15da14c38a6680ff771f9403bdf3a1bf3ef2383500518c2b3",
+    "saves/latest.sav": "0d76f051ab3e85903eb0397ff0df2d914955493bf6f727a4d48c968cb9a02b86",
+    "saves/pokedex.sav": "0d76f051ab3e85903eb0397ff0df2d914955493bf6f727a4d48c968cb9a02b86"
+  }
+}
