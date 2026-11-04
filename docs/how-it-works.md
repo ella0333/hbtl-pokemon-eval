@@ -62,7 +62,7 @@ after the milestone (for example `badge_2.sav`), and setup offers them as starti
 ## Saves, pausing and resuming
 
 The save mode decides what carries over between runs: a new game every run, the same game
-continued every run, or named save slots. The harness also saves in-game every 50 turns.
+continued, or named save slots. The harness also saves in-game every 50 turns.
 Only the game's own save is used, never emulator save states.
 
 `Ctrl+C` pauses a run. The harness saves in-game at the next overworld screen and closes

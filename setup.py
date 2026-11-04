@@ -198,7 +198,7 @@ def _ask_config() -> dict:
     save_mode = _choice(
         "How should saves carry over between runs?",
         [("new", "Start a new game every run"),
-         ("continue", "Keep playing the same game every run"),
+         ("continue", "Continue game"),
          ("slots", "Named save slots, picked when a run starts")],
         "new",
     )
