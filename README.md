@@ -2,21 +2,34 @@
 
 [![MIT License](https://img.shields.io/badge/MIT_License-869b9f?style=flat)](LICENSE)
 
-**A Pokemon Red and Blue benchmark from the paper Human Before the Loop, where any
-model plays the game through a multiple-choice menu.**
+**A Pokemon Red and Blue benchmark for testing LLMs inside the Human Before the Loop
+framework.**
+
+Human Before the Loop designs an agent's action space and data access before runtime,
+leaving no path open to data exfiltration or destructive actions. This method does not
+trade task reliability or capability for the security improvements it guarantees.
+
+This repo is a benchmark based on the Pokemon experimental setup from the paper, so any
+LLM can be run through the same framework and compared.
 
 ## How it works
 
-The agent is presented with a multiple-choice menu and generates a JSON output
-constrained to those choices. Final menu choices are bound to pre-written deterministic
-Python scripts that execute the intended action, so walking to an object, talking to it
-and advancing the dialogue all happen in code. This simplifies the decisions the agent
-makes, pairing the classification strengths of LLMs with the reliability and
-predictability of well-developed code.
+The LLM is presented with a multiple-choice menu and generates a JSON output constrained
+to those choices. The menu system is designed as a Hierarchical Extended Finite State
+Machine with nested submenus that lead to the final action through various LLM decisions.
 
-In the paper, Muse Glimmer 30B and Muse Spark 1.2 played Pokemon Red until they received
-the Pokedex, with no gameplay instructions and a 1,000-call limit, and got there in 342
-and 58 calls.
+Final menu choices are bound to pre-written deterministic Python scripts that execute the
+intended action. This simplifies the decisions the LLM makes, pairing the classification
+strengths of LLMs with the reliability and predictability of well-developed code, and
+replaces the need for the model to string together complex tool calls directly.
+
+## Model requirements
+
+Any instruct model served through an OpenAI-compatible API (`/v1/chat/completions`) will
+work, as long as it supports **structured output** (JSON schema responses) and **custom
+system prompts**. Models without structured output are not compatible. Setup runs a
+connection check at the end to confirm your model returns valid JSON, and auto-corrects
+common issues (wrong model name format, unsupported parameters).
 
 ## Quick start
 
@@ -35,7 +48,8 @@ Europe release). Setup checks the file and downloads everything else.
 
 Press `Ctrl+C` to save and pause a run. Running `python run.py` again offers to resume it.
 
-Need help choosing a compatible model? See the **[Model Options Guide](docs/models.md)**
+Looking for which models work? See the **[Model Options Guide](docs/models.md)** for
+backends, requirements, and configuration.
 
 ## Leaderboard
 
