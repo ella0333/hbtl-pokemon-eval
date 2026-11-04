@@ -496,7 +496,7 @@ class Run:
 
 
 def new_run(config: dict) -> Run:
-    for name, path in (("VBA-RR", runtime.vba_exe()), ("pokemon-access", runtime.ACCESS_DIR / "pokemon.lua"),
+    for name, path in (("pokemon-access", runtime.ACCESS_DIR / "pokemon.lua"),
                        ("the map database", runtime.MAP_DB)):
         if not path.exists():
             say(f"{name} is missing. Run 'python setup.py' first.")
@@ -534,6 +534,7 @@ def new_run(config: dict) -> Run:
 
 def main():
     config = load_config()
+    runtime.install_vba()
     resumable = paused_runs()
     run = None
     if resumable:

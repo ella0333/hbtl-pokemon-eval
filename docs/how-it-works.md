@@ -99,6 +99,6 @@ prices per million tokens in `config.yaml`, and a local model costs nothing.
 
 ## Troubleshooting
 
-If VBA-RR doesn't open, install the Microsoft Visual C++ Redistributable (x86) and the
-DirectX End-User Runtime, which this build of the emulator needs. Keep the repo in a folder
-whose path uses plain letters only, since the Lua bridge opens its files by path.
+If VBA-RR shows an error about a missing DLL when it opens, install the DirectX
+End-User Runtime, which the emulator needs. Keep the repo in a folder whose path uses plain
+letters only, since the Lua bridge opens its files by path.

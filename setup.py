@@ -284,7 +284,7 @@ def main():
 
     _say("")
     runtime.RUNTIME.mkdir(exist_ok=True)
-    runtime.install_vba(_say)
+    runtime.install_vba()
     runtime.install_pokemon_access(_say)
     runtime.build_map_database(_say)
 

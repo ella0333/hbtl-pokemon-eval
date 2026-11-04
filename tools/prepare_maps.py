@@ -1,19 +1,20 @@
-"""Build the map database from the pret/pokered source.
+r"""
+prepare_maps.py — Build complete map database from pret/pokered source data.
 
-Downloads pokered at a pinned commit, then extracts:
-  - Map dimensions, tileset IDs and map numbers from constants/headers
+Downloads the pokered repo once (pinned to one commit), then extracts:
+  - Map dimensions + tileset IDs from constants/headers
   - Warps, signs (bg_events), NPCs from data/maps/objects/*.asm
   - Block layouts from maps/*.blk
   - Blockset definitions from gfx/blocksets/*.bst
   - Passability grids from tile collision data
 
-At runtime the game layer looks up the current map by number and gets:
+Output: runtime/map_database.json, or the path given as the first argument.
+
+At runtime, the game layer looks up the current map by number and gets:
   - Pre-computed passability grid (no screen capture needed)
   - Warps with destination names
   - Signs/interactables with correct labels
   - NPCs with sprite names and movement types
-
-Usage: python tools/prepare_maps.py [output_path]
 """
 
 import io
@@ -28,8 +29,8 @@ import requests
 
 # ── Paths ────────────────────────────────────────────────────────────────
 
-ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_OUTPUT = ROOT / "runtime" / "map_database.json"
+MAP_DB_FILE = Path(__file__).resolve().parent.parent / "runtime" / "map_database.json"
+OUTPUT_DIR = MAP_DB_FILE.parent
 
 # Pinned so every copy of the benchmark builds the same map database.
 POKERED_COMMIT = "0dbf95cd12f5b1511c62ce69efe283000f780a8f"
@@ -303,10 +304,16 @@ def build_passability(blk_data, blocks, w, h, passable_set):
 # ── Main ─────────────────────────────────────────────────────────────────
 
 def main(output_path=None):
-    map_db_file = Path(output_path) if output_path else DEFAULT_OUTPUT
+    global MAP_DB_FILE, OUTPUT_DIR
+    if output_path:
+        MAP_DB_FILE = Path(output_path)
+        OUTPUT_DIR = MAP_DB_FILE.parent
+    print("=" * 50)
+    print("  Pokemon R/B Map Database Builder")
+    print("=" * 50)
 
     # Download repo zip (one request, ~10 MB)
-    print("Downloading pret/pokered to build the map database...")
+    print("\nDownloading pokered repo...")
     resp = requests.get(REPO_ZIP, timeout=180, stream=True)
     resp.raise_for_status()
     buf = io.BytesIO()
@@ -327,10 +334,12 @@ def main(output_path=None):
         if n.endswith("constants/map_constants.asm"):
             prefix = n.replace("constants/map_constants.asm", "")
             break
+    print(f"  Prefix: {prefix}")
 
     # Parse constants
     map_consts = parse_map_constants(zread(zf, f"{prefix}constants/map_constants.asm") or "")
     sprite_names = parse_sprite_constants(zread(zf, f"{prefix}constants/sprite_constants.asm") or "")
+    print(f"  {len(map_consts)} maps, {len(sprite_names)} sprites")
 
     # Index files in zip
     headers, objects, blks = {}, {}, {}
@@ -345,6 +354,7 @@ def main(output_path=None):
             blks[stem] = n
 
     # Load blocksets
+    print("\nLoading blocksets...")
     blocksets = {}
     loaded = {}
     for ts_id, bst_name in BLOCKSET_FILES.items():
@@ -356,11 +366,12 @@ def main(output_path=None):
             bs = parse_blockset(data)
             loaded[bst_name] = bs
             blocksets[ts_id] = bs
+            print(f"  {bst_name}: {len(bs)} blocks")
 
     # Build map database
+    print("\nBuilding maps...")
     database = {}
     name_lookup = {}  # display_name → camel_name (for runtime lookup)
-    id_to_key = {}    # map number → camel_name (what the game layer looks up)
 
     for camel, hpath in sorted(headers.items()):
         htxt = zread(zf, hpath)
@@ -407,25 +418,37 @@ def main(output_path=None):
         database[camel] = entry
         name_lookup[display] = camel
 
-    # Number each map by its own constant. Matching on the header's constant
-    # is not enough: UndergroundPathRoute7Copy's header reuses
-    # UNDERGROUND_PATH_ROUTE_7, which would shift that map onto the wrong number.
-    by_name = {camel.lower(): camel for camel in database}
+        n_obj = len(warps) + len(signs) + len(npcs_list)
+        pass_pct = ""
+        if passability:
+            total_cells = bw * 2 * bh * 2
+            pass_cells = sum(c for row in passability for c in row)
+            pass_pct = f" ({pass_cells}/{total_cells} walkable)"
+        print(f"  {display}: {bw*2}x{bh*2}{pass_pct}, {n_obj} objects")
+
+    database["_name_lookup"] = name_lookup
+
+    # Map number → map key, which is what the game layer looks maps up by.
+    # Matched on each map's own constant: UndergroundPathRoute7Copy's header
+    # reuses UNDERGROUND_PATH_ROUTE_7, which would put it on the wrong number.
+    by_name = {camel.lower(): camel for camel in database if not camel.startswith("_")}
+    id_to_key = {}
     for const, dims in map_consts.items():
         camel = by_name.get(const.replace("_", "").lower())
         if camel:
             id_to_key[str(dims["id"])] = camel
-
-    database["_name_lookup"] = name_lookup
     database["_id_to_key"] = id_to_key
 
     # Save
-    map_db_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(map_db_file, "w") as f:
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    with open(MAP_DB_FILE, "w") as f:
         json.dump(database, f, separators=(",", ":"))
 
-    print(f"Saved the map database ({len(id_to_key)} maps) to {map_db_file}")
-    return map_db_file
+    size_kb = MAP_DB_FILE.stat().st_size // 1024
+    print(f"\nSaved {MAP_DB_FILE} ({size_kb} KB)")
+    print(f"Total: {len(database) - 1} maps")
+    print("Done!")
+    return MAP_DB_FILE
 
 
 if __name__ == "__main__":

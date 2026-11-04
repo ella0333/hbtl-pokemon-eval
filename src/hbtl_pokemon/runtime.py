@@ -1,17 +1,15 @@
-"""Third-party downloads, the ROM check, and the per-run game folder.
+"""The emulator, third-party downloads, the ROM check, and the per-run game folder.
 
-Nothing here is shipped in the repo: VBA-RR, pokemon-access and the map
-database are fetched by setup.py into runtime/, and the player's own ROM is
-copied into each run's folder.
+VBA-RR ships in vendor/VBA-RR and is copied into runtime/. pokemon-access and
+the map database are fetched by setup.py into runtime/, and the player's own
+ROM is copied into each run's folder.
 """
 
 from __future__ import annotations
 
-import hashlib
+import filecmp
 import io
-import os
 import shutil
-import subprocess
 import zipfile
 import zlib
 from pathlib import Path
@@ -26,11 +24,10 @@ MAP_DB = RUNTIME / "map_database.json"
 GAMES_DIR = RUNTIME / "games"
 BRIDGE_TEMPLATE = ROOT / "lua" / "pokemon_bridge.lua"
 
-# VBA-RR, the official TASEmulators build (GPL-2.0).
-VBA_URL = ("https://github.com/TASEmulators/vba-rerecording/releases/download/"
-           "480LRC4/VBA-rr-svn480.LRC4-xp140.7z")
-VBA_SHA256 = "b266da42d9876e6fea0dfadbe46b4e51ad76cba1bcadcc33bddc14fbac56270e"
-VBA_EXE_NAME = "VBA-rr-svn480+LRC4.exe"
+# VBA-RR (GPL-2.0) with its LuaJIT lua51.dll, the build the bridge was written
+# against. Shipped in the repo and copied into runtime/ so the ini it rewrites
+# per run never touches the committed copy.
+VBA_VENDOR = ROOT / "vendor" / "VBA-RR"
 
 # pokemon-access, the screen reader scripts the bridge loads (no license, so
 # it is downloaded here and never committed).
@@ -44,24 +41,10 @@ ROM_NAMES = {
     "blue": "Pokemon - Blue Version (USA, Europe) (SGB Enhanced)",
 }
 
-VBA_INI = """[preferences]
-video=2
-defaultVideoDriver=1
-renderMethod=1
-throttle=100
-skipBios=0
-soundEnable=0
-soundVolume=0
-pauseWhenInactive=0
-enableBackgroundInput=0
-autoLoadMostRecent=0
-batteryDir={dir}
-saveDir={dir}
-"""
 
 
 def vba_exe() -> Path:
-    return VBA_DIR / VBA_EXE_NAME
+    return VBA_DIR / "vba.exe"
 
 
 def _download(url: str) -> bytes:
@@ -70,25 +53,17 @@ def _download(url: str) -> bytes:
     return resp.content
 
 
-def install_vba(say) -> Path:
-    """Download and unpack VBA-RR into runtime/vba, and write its vba.ini."""
-    exe = vba_exe()
-    if not exe.exists():
-        say("Downloading VBA-RR...")
-        data = _download(VBA_URL)
-        if hashlib.sha256(data).hexdigest() != VBA_SHA256:
-            raise RuntimeError("The VBA-RR download did not match the expected file.")
-        VBA_DIR.mkdir(parents=True, exist_ok=True)
-        archive = RUNTIME / "vba.7z"
-        archive.write_bytes(data)
-        # Windows' own tar.exe (bsdtar) reads .7z archives.
-        tar = Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32" / "tar.exe"
-        subprocess.run([str(tar), "-xf", str(archive), "-C", str(VBA_DIR)], check=True)
-        archive.unlink()
-    ini = VBA_DIR / "vba.ini"
-    if not ini.exists():
-        ini.write_text(VBA_INI.format(dir=str(RUNTIME)), encoding="ascii")
-    return exe
+def install_vba() -> Path:
+    """Copy the shipped VBA-RR into runtime/vba, unless the same build is there."""
+    current = all(
+        (VBA_DIR / name).exists() and filecmp.cmp(VBA_VENDOR / name, VBA_DIR / name, shallow=False)
+        for name in ("vba.exe", "lua51.dll")
+    )
+    if not current:
+        if VBA_DIR.exists():
+            shutil.rmtree(VBA_DIR)
+        shutil.copytree(VBA_VENDOR, VBA_DIR)
+    return vba_exe()
 
 
 def install_pokemon_access(say) -> Path:

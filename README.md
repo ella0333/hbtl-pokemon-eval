@@ -74,12 +74,18 @@ leaderboard once the pull request is merged.
 
 ## Third-party licenses
 
-This project is licensed under the [MIT License](LICENSE). Setup downloads the following
-components, which are not part of this repo and keep their own terms:
+This project is licensed under the [MIT License](LICENSE). It bundles the following
+third-party components under their own licenses:
 
 | Component | License | Details |
 |-----------|---------|---------|
-| **[VBA-RR](https://github.com/TASEmulators/vba-rerecording)** | GPL v2 | The Game Boy emulator, release 480LRC4 |
+| **[VBA-RR](https://github.com/TASEmulators/vba-rerecording)** | GPL v2 | [vendor/VBA-RR/LICENSE-GPL-2.0.txt](vendor/VBA-RR/LICENSE-GPL-2.0.txt) · Source: [github.com/TASEmulators/vba-rerecording](https://github.com/TASEmulators/vba-rerecording) |
+| **[LuaJIT](https://luajit.org/)** (lua51.dll) | MIT | [vendor/VBA-RR/LICENSE-LuaJIT.txt](vendor/VBA-RR/LICENSE-LuaJIT.txt) · Source: [luajit.org](https://luajit.org/) |
+
+Setup downloads these, which are not part of this repo:
+
+| Component | License | Details |
+|-----------|---------|---------|
 | **[pokemon-access](https://github.com/nuive/pokemon-access)** | None published | Screen reader scripts the Lua bridge reads the game through, commit 2deb98f (version 3.1.0) |
 | **[pret/pokered](https://github.com/pret/pokered)** | None published | The disassembly the map database is built from, at a pinned commit |
 

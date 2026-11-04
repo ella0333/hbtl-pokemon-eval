@@ -261,7 +261,7 @@ local function extract_menu_items()
         endpos = endpos - 1
     end
 
-    -- Skip battle menus - handled by extract_battle_menu() which properly
+    -- Skip battle menus — handled by extract_battle_menu() which properly
     -- splits the 2x2 grid into individual items
     if screen.tile_lines[3] and screen.tile_lines[3]:match(HEALTH_BAR) then
         return nil
@@ -323,7 +323,7 @@ local function extract_battle_menu()
     local ok_hdr, results = pcall(generate_menu_header)
     if not ok_hdr or not results then return nil end
 
-    -- Find column divider - only present when a 2x2 battle grid is on screen.
+    -- Find column divider — only present when a 2x2 battle grid is on screen.
     -- During battle text, line 15 has dialogue, not PKMN/×, so correctpos is nil.
     local correctpos = nil
     if screen.tile_lines[15] and screen.tile_lines[15]:match("\xe1\xe2\x7f") then
@@ -646,8 +646,8 @@ local function build_state()
         battle.battle_type = ok_bt and bt or 0
 
         -- wBattleType: 0=normal, 1=OLD MAN catching demo, 2=Safari Zone.
-        -- The demo plays itself - the menus are drawn but every input is
-        -- ignored - so the Python side has to auto-advance it instead of
+        -- The demo plays itself — the menus are drawn but every input is
+        -- ignored — so the Python side has to auto-advance it instead of
         -- offering choices.
         local ok_bf, bf = pcall(function() return memory.readbyte(0xD05A) end)
         battle.battle_type_flag = ok_bf and bf or 0
@@ -727,7 +727,7 @@ local function build_state()
                 if skip_signposts and obj.type == "signpost" then
                     -- garbage data, skip entirely
                 elseif obj.type == "connection" then
-                    -- Connections are conceptual map exits - pokemon-access
+                    -- Connections are conceptual map exits — pokemon-access
                     -- creates them with nil x,y (global vars never set in rby.lua),
                     -- so they must be handled before the obj.x/obj.y check.
                     local entry = {
@@ -799,7 +799,8 @@ local function build_state()
         state.objects = {}
     end
 
-    -- Intercepted tolk output (copied but NOT cleared here - -- cleared in process_commands() when Python sends the next command,
+    -- Intercepted tolk output (copied but NOT cleared here —
+    -- cleared in process_commands() when Python sends the next command,
     -- so Python never misses tolk due to state export timing)
     state.tolk_output = {}
     for _, line in ipairs(tolk_lines) do
@@ -815,18 +816,6 @@ local function build_state()
     end
 
     return state
-end
-
--- A pathfinding error inside pokemon-access (a-star.lua) used to stop the
--- whole script. Log it, drop the walk, and keep the bridge running.
-local function log_bridge_error(where, err)
-    auto_walk_active = false
-    auto_walk_path = nil
-    local f = io.open(BRIDGE_DIR .. "bridge_errors.txt", "a")
-    if f then
-        f:write(os.date("%Y-%m-%dT%H:%M:%S") .. " " .. where .. ": " .. tostring(err) .. "\n")
-        f:close()
-    end
 end
 
 ---------------------------------------------------------------------------
@@ -974,7 +963,7 @@ end
 local function execute_auto_walk()
     if not auto_walk_active or not auto_walk_path then return end
 
-    -- Cancel walk if map changed (walked through a warp - path is stale)
+    -- Cancel walk if map changed (walked through a warp — path is stale)
     local ok_mid, cur_map = pcall(get_map_id)
     if ok_mid and auto_walk_map_id and cur_map ~= auto_walk_map_id then
         auto_walk_active = false
@@ -1019,7 +1008,7 @@ local function execute_auto_walk()
 
     if dir then
         -- Hold direction continuously every frame.
-        -- Pokemon's engine handles walk timing internally - we just hold
+        -- Pokemon's engine handles walk timing internally — we just hold
         -- the button and let it walk one tile at a time. No frame counting
         -- needed (the old 8-frame press caused double-stepping because a
         -- full tile walk takes ~16 frames in Gen 1).
@@ -1113,17 +1102,11 @@ while true do
     input_frame_counter = input_frame_counter + 1
 
     -- Process incoming commands
-    local ok_commands, command_error = pcall(process_commands)
-    if not ok_commands then
-        log_bridge_error("command", command_error)
-    end
+    process_commands()
 
     -- Execute auto-walk
     if auto_walk_active then
-        local ok_walk, walk_error = pcall(execute_auto_walk)
-        if not ok_walk then
-            log_bridge_error("auto_walk", walk_error)
-        end
+        execute_auto_walk()
     else
         -- Process button queue only when not auto-walking
         process_button_queue()

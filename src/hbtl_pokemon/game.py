@@ -176,10 +176,10 @@ user32 = ctypes.windll.user32 if hasattr(ctypes, "windll") else None
 # Item quantity regex
 _QUANTITY_RE = re.compile(r'^[×x\u00d7]\s*\d+$', re.IGNORECASE)
 
-# Mart price line regex - a price sitting on its own line, e.g. "¥200"
+# Mart price line regex — a price sitting on its own line, e.g. "¥200"
 _PRICE_RE = re.compile(r'^[¥￥$]\s*[\d,]+$')
 
-# Item descriptions - helps the AI understand what each item does
+# Item descriptions — helps the AI understand what each item does
 _ITEM_HINTS = {
     "POTION": "restores 20 HP",
     "SUPER POTION": "restores 50 HP",
@@ -246,7 +246,7 @@ GEN1_ITEMS = {
 }
 
 # Gen 1 species, keyed by the *internal* index stored in the party struct
-# (0xD16B + i*0x2C, first byte) - not the Pokédex number.  Only used to recover
+# (0xD16B + i*0x2C, first byte) — not the Pokédex number.  Only used to recover
 # a Pokémon's real name when its nickname is unreadable; unknown ids fall
 # through to the nickname, same as GEN1_ITEMS falls through to "Item #n".
 GEN1_SPECIES = {
@@ -296,7 +296,7 @@ GEN1_SPECIES = {
 # whether a "heal" action is worth offering at all.
 _HEALING_ITEMS = ("FULL RESTORE", "MAX POTION", "HYPER POTION", "SUPER POTION", "POTION")
 
-# Field moves - the only reason the in-game menu still needs to be reachable
+# Field moves — the only reason the in-game menu still needs to be reachable
 # once START is gone.  Move ids match GEN1_MOVES.
 _FIELD_MOVES = {15: "CUT", 19: "FLY", 57: "SURF", 70: "STRENGTH", 91: "DIG", 148: "FLASH"}
 
@@ -356,10 +356,11 @@ def party_field_moves(state):
     return found
 
 # The TOWN MAP is the one bag item that opens a full-screen graphic instead of
-# text - the bridge reads it as mode "overworld" with no menu, so every action
+# text — the bridge reads it as mode "overworld" with no menu, so every action
 # after that silently does nothing and the agent gets stuck on a dead screen.  It is
 # intercepted in the USE/TOSS handler and answered with this text instead.
-# Contents are the Kanto geography printed on the map itself, nothing more - # no objectives, no "go here next".  Keys are display_name values from the map
+# Contents are the Kanto geography printed on the map itself, nothing more —
+# no objectives, no "go here next".  Keys are display_name values from the map
 # database so _TOWN_MAP_REGION can be looked up directly by current location.
 _TOWN_MAP_REGION = {
     "Pallet Town": "Route 1 north to Viridian City. Route 21 south is open water to Cinnabar Island (needs SURF).",
@@ -374,7 +375,7 @@ _TOWN_MAP_REGION = {
     "Cinnabar Island": "Route 20 east across the water to the Seafoam Islands and Fuchsia City. Route 21 north across the water to Pallet Town (both need SURF).",
     "Indigo Plateau": "Reached from Viridian City by Route 22 west, then Victory Road.",
     # Not a town, but it sits on the map between two of them and shares a name
-    # prefix with Viridian City - without its own entry the fallback below would
+    # prefix with Viridian City — without its own entry the fallback below would
     # place the agent in the wrong spot.
     "Viridian Forest": "Inside Route 2, between Viridian City to the south and Pewter City to the north.",
 }
@@ -401,7 +402,7 @@ def _town_map_text(current_location):
             here = clean
         else:
             # Indoor maps are named after their town ("Viridian Pokecenter",
-            # "Viridian School House") - match on the town's first word.
+            # "Viridian School House") — match on the town's first word.
             upper = clean.upper()
             for town in _TOWN_MAP_ORDER:
                 if upper.startswith(town.split()[0].upper()):
@@ -411,13 +412,13 @@ def _town_map_text(current_location):
     lines = ["You unfold the TOWN MAP and look at the KANTO region."]
     if here:
         lines.append(f"You are here: {here}.")
-        lines.append(f"  {here} - {_TOWN_MAP_REGION[here]}")
+        lines.append(f"  {here} — {_TOWN_MAP_REGION[here]}")
         lines.append("")
     lines.append("The rest of the map:")
     for town in _TOWN_MAP_ORDER:
         if town == here:
             continue
-        lines.append(f"  {town} - {_TOWN_MAP_REGION[town]}")
+        lines.append(f"  {town} — {_TOWN_MAP_REGION[town]}")
     lines.append("You fold the map back up.")
     return lines
 
@@ -873,12 +874,8 @@ def find_vba_window(timeout=15.0, pid=None):
     return None
 
 
-def find_lua_dialog(timeout=10.0, pid=None):
-    """Find the 'Lua Script' dialog window that opens after menu command.
-
-    With a pid, only that emulator's dialog counts, so another VBA-RR that
-    happens to be open is never touched.
-    """
+def find_lua_dialog(timeout=10.0):
+    """Find the 'Lua Script' dialog window that opens after menu command."""
     start = time.time()
     while time.time() - start < timeout:
         result = []
@@ -891,11 +888,6 @@ def find_lua_dialog(timeout=10.0, pid=None):
                     user32.GetWindowTextW(hwnd, buf, length + 1)
                     title = buf.value
                     if "Lua Script" in title:
-                        if pid:
-                            owner = ctypes.wintypes.DWORD()
-                            user32.GetWindowThreadProcessId(hwnd, ctypes.byref(owner))
-                            if owner.value != pid:
-                                return True
                         result.append(hwnd)
             return True
 
@@ -905,25 +897,6 @@ def find_lua_dialog(timeout=10.0, pid=None):
             return result[0]
         time.sleep(0.3)
     return None
-
-
-def lua_console_text(pid):
-    """The text in VBA-RR's Lua console (the second edit box), or ""."""
-    lua_hwnd = find_lua_dialog(timeout=1, pid=pid)
-    if not lua_hwnd:
-        return ""
-    console = find_child_by_class(lua_hwnd, "Edit", 1)
-    if not console:
-        return ""
-    user32.SendMessageW.argtypes = [ctypes.wintypes.HWND, ctypes.c_uint,
-                                    ctypes.wintypes.WPARAM, ctypes.wintypes.LPARAM]
-    user32.SendMessageW.restype = ctypes.wintypes.LPARAM
-    length = user32.SendMessageW(console, WM_GETTEXTLENGTH, 0, 0)
-    if length <= 0:
-        return ""
-    buf = ctypes.create_unicode_buffer(length + 1)
-    user32.SendMessageW(console, WM_GETTEXT, length + 1, ctypes.cast(buf, ctypes.c_void_p).value)
-    return buf.value.strip()
 
 
 def find_child_by_class(parent_hwnd, class_name, nth=0):
@@ -1000,7 +973,7 @@ def auto_load_lua_script(pid=None):
     time.sleep(1.0)
 
     # Find the Lua Script dialog
-    lua_hwnd = find_lua_dialog(timeout=10, pid=pid)
+    lua_hwnd = find_lua_dialog(timeout=10)
     if not lua_hwnd:
         return False
 
@@ -1173,7 +1146,7 @@ def get_map_objects(state, map_db_data):
     MAX_DIST = 12
     # Warps get a much longer leash than signs and NPCs.  A map exit is a fixed
     # feature the player can see and remember, and BFS already pathfinds across
-    # the whole grid - but at 12 tiles the Viridian Forest gates (34x48 map,
+    # the whole grid — but at 12 tiles the Viridian Forest gates (34x48 map,
     # north gate at 1,0) never appeared in Nearby, so the agent could only walk five
     # tiles at a time through a maze and went in circles.
     MAX_WARP_DIST = 60
@@ -1257,7 +1230,7 @@ def get_map_objects(state, map_db_data):
         # If this is a Poke Ball we've already checked, show the Pokemon name
         if display_name == "Poke Ball" and (nx, ny) in pokeball_names:
             display_name = f"Poke Ball ({pokeball_names[(nx, ny)]})"
-        # Poke Balls (items) ALWAYS stay - force True regardless of NPC db match
+        # Poke Balls (items) ALWAYS stay — force True regardless of NPC db match
         if "Poke Ball" in display_name or best_label == "Item":
             best_stays = True
         # Mark NPC cell as impassable for pathfinding
@@ -1290,7 +1263,7 @@ def get_map_objects(state, map_db_data):
     shown = objects[:10]
 
     # Warps now reach much further than everything else, so on a crowded map
-    # they can be pushed out of the top 10 by nearby NPCs - which is exactly
+    # they can be pushed out of the top 10 by nearby NPCs — which is exactly
     # the case (Viridian Forest) this is meant to fix.  Reserve the two
     # closest exits, dropping the furthest non-warps to make room.
     if len(objects) > len(shown):
@@ -1358,7 +1331,7 @@ def map_walk_to(obj, state, pokeball_names):
     # Check for wild encounter interruption during walk
     check = read_state()
     if check and check.get("mode") not in ("overworld", None):
-        return check, None  # Battle/dialogue started - let caller handle it
+        return check, None  # Battle/dialogue started — let caller handle it
 
     # For NPCs/signs: press A to trigger the interaction.
     screen_lines = None
@@ -1403,7 +1376,7 @@ def map_walk_to(obj, state, pokeball_names):
                             pokeball_names[(ox, oy)] = pokemon_name
             return read_state(), screen_lines
         else:
-            # Wandering NPC - check for dialogue, if no response repath to new position
+            # Wandering NPC — check for dialogue, if no response repath to new position
             npc_name = obj.get("name", "")
             for attempt in range(3):
                 # Check if dialogue started
@@ -1416,7 +1389,7 @@ def map_walk_to(obj, state, pokeball_names):
                         return result, None
                 if attempt >= 2:
                     break
-                # NPC didn't respond - repath to their new position
+                # NPC didn't respond — repath to their new position
                 fresh = read_state()
                 if not fresh or fresh.get("mode") != "overworld":
                     return fresh, None
@@ -1442,14 +1415,14 @@ def map_walk_to(obj, state, pokeball_names):
                                 found = True
                                 break
                 if not found:
-                    # Can't find NPC - try facing around and interacting
+                    # Can't find NPC — try facing around and interacting
                     send_command(f"PRESS:{face_dir}")
                     time.sleep(0.2)
                     send_command("INTERACT")
             return read_state(), ["They walked away before you could talk to them."]
 
     elif tile_type != "warp":
-        # NPC/object - press A to interact, repath up to 3 times
+        # NPC/object — press A to interact, repath up to 3 times
         npc_name = obj.get("name", "")
         for attempt in range(3):
             time.sleep(0.2)
@@ -1462,7 +1435,7 @@ def map_walk_to(obj, state, pokeball_names):
                     return result, None
             if attempt >= 2:
                 break
-            # No dialogue - repath to NPC's new position
+            # No dialogue — repath to NPC's new position
             fresh = read_state()
             if not fresh or fresh.get("mode") != "overworld":
                 return fresh, None
@@ -1590,7 +1563,7 @@ def menu_pick(targets, settle=0.4):
 
     Targets are compared uppercase against the entry with any trailing quantity
     stripped, the same way the item hints match.  Returns True on success.
-    Only for short menus that fit on screen - the bag needs _scan_item_list.
+    Only for short menus that fit on screen — the bag needs _scan_item_list.
     """
     time.sleep(settle)
     s = read_state()
@@ -1740,7 +1713,7 @@ def auto_advance_scripted_battle(initial_state):
     """Press A through a battle the game is playing for us, collecting text.
 
     Returns (final_state, lines).  Mirrors auto_advance_battle_text, but never
-    stops to offer a choice - the whole point is that choices do nothing here.
+    stops to offer a choice — the whole point is that choices do nothing here.
     """
     state = initial_state
     seen = set()
@@ -1869,7 +1842,7 @@ def _find_items_on_screen(state, items):
 
 def _detect_battle_cursor(state, fallback_options=None):
     """Detect current battle cursor position from screen tiles or tolk output."""
-    # Prefer explicit options over state's battle_menu - the state may still
+    # Prefer explicit options over state's battle_menu — the state may still
     # have the main menu (FIGHT/PKMN/ITEM/RUN) while we're in the move menu,
     # or vice versa. Callers pass the correct options for the active menu.
     items = fallback_options or state.get("battle_menu", [])
@@ -2029,7 +2002,7 @@ def _yes_no_cursor_on_no(state):
     """True when the arrow in a YES/NO box is parked on NO.
 
     Gen 1 draws these boxes with the cursor on YES, but read it rather than
-    assume it - answering the price prompt with the wrong half silently
+    assume it — answering the price prompt with the wrong half silently
     cancels a purchase.
     """
     for line in state.get("tolk_output", []) or []:
@@ -2044,7 +2017,8 @@ def _active_party_index(state):
 
     Matched off the battle struct (nickname + level + max HP) rather than a
     new RAM read.  Needed because picking the Pokémon that is already out
-    just makes the game say "X is already out!" and redraw the party list - which read to the agent as an unbreakable loop.
+    just makes the game say "X is already out!" and redraw the party list —
+    which read to the agent as an unbreakable loop.
     """
     battle = _get_battle_info(state)
     if not battle:
@@ -2116,7 +2090,7 @@ def auto_advance_battle_text(state):
 
     The name-entry keyboard counts as a menu.  Catching a Pokémon answers YES
     to "give a nickname?" and lands on the keyboard while the game still
-    reports mode "battle" - pressing A there types A's into the nickname.
+    reports mode "battle" — pressing A there types A's into the nickname.
     """
     collected = []
     seen = set()
@@ -2171,11 +2145,11 @@ def auto_advance_battle_text(state):
             enemy_hp = battle.get("enemy_hp", 1)
             if enemy_hp > 0:
                 break  # mid-battle idle, safe to break
-            # enemy fainted - keep pressing A for victory/EXP text
+            # enemy fainted — keep pressing A for victory/EXP text
             if idle_count >= 15:
                 break  # ultimate safety valve
 
-        # Brief pause before pressing A - gives the bridge time to export
+        # Brief pause before pressing A — gives the bridge time to export
         # state if the battle menu just appeared.  Without this, an A press
         # can queue up and blow past a newly-drawn menu (especially after
         # multi-line battle text like "not very effective" + enemy attack).
@@ -2258,8 +2232,8 @@ def get_menu_items(state):
                 seen.add(clean)
                 items.append(clean)
         selected = 0
-    # Mart lists draw each entry on two lines - the item name, then its price
-    # underneath - and the bridge reports both lines as separate menu items.
+    # Mart lists draw each entry on two lines — the item name, then its price
+    # underneath — and the bridge reports both lines as separate menu items.
     # Fold the price back into the name so one entry == one cursor row;
     # otherwise every index below the first item is off by one and selecting
     # an item buys the one above it.
@@ -2355,7 +2329,7 @@ def _scan_item_list(state):
     prev_name = start_name
     for _ in range(21):
         send_command("NAV:DOWN")
-        # Wait longer than a single frame export interval - when the list
+        # Wait longer than a single frame export interval — when the list
         # scrolls past the visible window the entire tile map redraws,
         # which takes more frames than a simple cursor move.
         time.sleep(0.35)
@@ -2365,7 +2339,7 @@ def _scan_item_list(state):
             name, qty = _read_arrow_item_and_qty(state)
             if name is not None and name != prev_name:
                 break  # got a new item
-            # Stale read (mid-scroll) or same item - wait and retry
+            # Stale read (mid-scroll) or same item — wait and retry
             time.sleep(0.15)
             name, qty = None, None
         if name is None:
@@ -2455,7 +2429,7 @@ def _read_visible_item_list(state):
 
     Scans the screen for item entries by finding the arrow cursor column,
     then reading all rows at that column for item text + quantities.
-    Returns (items, cursor_index) - same interface as _scan_item_list.
+    Returns (items, cursor_index) — same interface as _scan_item_list.
     """
     tile_map = state.get("tile_map", [])
     if not tile_map or len(tile_map) < 360:
@@ -2544,7 +2518,7 @@ def _read_visible_item_list(state):
     if not scanned:
         return [], -1
 
-    # Build items list (no reordering needed - screen order is correct)
+    # Build items list (no reordering needed — screen order is correct)
     items = []
     for _, name, qty in scanned:
         if name.upper() == "CANCEL":
@@ -2586,7 +2560,7 @@ class PokemonGame:
         self._starting_house = ""       # raw map name of player's starting house
         self.interacted_objects = set()
         self.interacted_map_id = None
-        # {(x, y)} - objects that were actually walked to twice with no
+        # {(x, y)} — objects that were actually walked to twice with no
         # interaction resulting.  Observed failures only, never predicted.
         # Cleared on map change so re-entering an area gives a clean slate.
         self._blocked_objects = set()
@@ -2594,7 +2568,7 @@ class PokemonGame:
         self.last_warp_used = None
         self._just_left_location = ""   # location name before last warp (for "just left" label)
         self._just_left_remaining = 0   # turns remaining for "just left" label
-        # (oak hint fields removed - replaced by dynamic direction hints)
+        # (oak hint fields removed — replaced by dynamic direction hints)
         self._recent_actions = deque(maxlen=5)  # recent action log to prevent looping
         self._prev_state_text = ""  # track previous state to detect stuck/no-change
         self.map_db = None
@@ -2604,7 +2578,7 @@ class PokemonGame:
         # so get_state() can present them directly without auto-advancing
         self._pending_sub_menu = None  # list of option strings, or None
 
-        # Track move cursor position - Gen 1 remembers the last-selected move
+        # Track move cursor position — Gen 1 remembers the last-selected move
         # within a battle, resets to 0 at battle start
         self._move_cursor = 0
 
@@ -2699,7 +2673,7 @@ class PokemonGame:
 
         Deliberately narrow: the hint must be fresh, we must still be in
         Viridian City, and the opponent must be the WEEDLE the demo always
-        uses.  A real wild battle can't satisfy all three - there is no grass
+        uses.  A real wild battle can't satisfy all three — there is no grass
         in Viridian City.
         """
         if self._tutorial_hint_turns <= 0:
@@ -2891,30 +2865,18 @@ class PokemonGame:
             time.sleep(2)
 
             # Auto-load Lua bridge
-            loaded = auto_load_lua_script(pid=self.process.pid)
+            auto_load_lua_script(pid=self.process.pid)
 
             # Find the VBA window handle
             self.vba_hwnd = find_vba_window(timeout=15, pid=self.process.pid)
 
             # Wait for bridge connection
             start = time.time()
-            ready = False
             while time.time() - start < 30:
                 state = read_state()
                 if state and state.get("ready"):
-                    ready = True
                     break
                 time.sleep(0.5)
-            if not ready:
-                if not loaded:
-                    print("  The Lua bridge did not start: VBA-RR's Lua Script window "
-                          "couldn't be opened or the script couldn't be run in it.")
-                else:
-                    console = lua_console_text(self.process.pid)
-                    print("  The Lua bridge did not start. VBA-RR's Lua console says:")
-                    print("  " + (console.replace("\r\n", "\n").replace("\n", "\n  ")
-                                  if console else "(nothing)"))
-                return False
 
             # Title screen is handled by get_game_state() which auto-selects
             # CONTINUE (if .sav exists) or NEW GAME. Just wait for bridge ready.
@@ -2925,7 +2887,7 @@ class PokemonGame:
                     time.sleep(0.5)
                     continue
                 if state.get("mode") == "menu":
-                    break  # Title menu appeared - get_game_state will handle it
+                    break  # Title menu appeared — get_game_state will handle it
                 px = state.get("player_x", -1)
                 if px > 0:
                     break  # Already in game
@@ -3049,7 +3011,7 @@ class PokemonGame:
                     if not more:
                         break
 
-                # Format dialogue text - include any pending text from previous states
+                # Format dialogue text — include any pending text from previous states
                 text_parts = []
                 if self._pending_text:
                     text_parts.extend(self._pending_text)
@@ -3073,7 +3035,7 @@ class PokemonGame:
                     combined = " ".join(all_lines)
                     if (hint("story_notes") and "Those are" in combined
                             and "contain" in combined and "MON" in combined):
-                        text_parts.append("[You looked at the Poké Balls but cannot take one yet - you need Professor Oak's permission first.]")
+                        text_parts.append("[You looked at the Poké Balls but cannot take one yet — you need Professor Oak's permission first.]")
 
 
                 # After dialogue, check if we landed on a mode that needs input
@@ -3131,7 +3093,7 @@ class PokemonGame:
                     self._prev_mode = "dialogue"
                     if text_parts:
                         self._pending_text.extend(text_parts)
-                    return None  # Retry - overworld handler will include the text
+                    return None  # Retry — overworld handler will include the text
 
             # ── Battle mode ────────────────────────────────────────
             if mode != "battle" and self._pending_sub_menu:
@@ -3162,11 +3124,11 @@ class PokemonGame:
                         self.accumulated_text.extend(demo_lines)
                     if hint("story_notes"):
                         self._pending_text.append(
-                            "[You watched a demonstration - the other person did all of it. "
+                            "[You watched a demonstration — the other person did all of it. "
                             "This was not your battle and none of your choices applied.]"
                         )
                     self._prev_mode = "battle"
-                    return None  # Retry - next state shows the overworld
+                    return None  # Retry — next state shows the overworld
 
                 # Reset move cursor at the start of each new battle
                 if self._prev_mode != "battle":
@@ -3216,7 +3178,7 @@ class PokemonGame:
                             if item_hint:
                                 display_opt = f"{opt} - {item_hint}"
                         text_parts.append(f"{ch}. {display_opt}")
-                    # Struggle guidance - when moves are running low
+                    # Struggle guidance — when moves are running low
                     is_move_menu = any("PP:" in o for o in sub_options)
                     if is_move_menu and hint("battle_tips"):
                         has_pp = [o for o in sub_options if "PP:" in o and "(PP: 0)" not in o]
@@ -3229,9 +3191,9 @@ class PokemonGame:
                             for o in has_pp
                         ))
                         if all_empty:
-                            text_parts.append("[All moves are out of PP - select any move and the game will use STRUGGLE, a weak typeless attack that also deals recoil damage to you. PP refills when you heal at a Pokémon Center, so don't worry about running out permanently.]")
+                            text_parts.append("[All moves are out of PP — select any move and the game will use STRUGGLE, a weak typeless attack that also deals recoil damage to you. PP refills when you heal at a Pokémon Center, so don't worry about running out permanently.]")
                         elif only_nondamage:
-                            text_parts.append(f"[Some moves still have PP - use them! PP refills when you heal at a Pokémon Center, so there's no reason to save them. Use what you've got.]")
+                            text_parts.append(f"[Some moves still have PP — use them! PP refills when you heal at a Pokémon Center, so there's no reason to save them. Use what you've got.]")
 
                     # Add cancel option
                     ch = chr(ord("A") + len(sub_options))
@@ -3244,7 +3206,7 @@ class PokemonGame:
                 battle_text = _dedup_progressive_text(battle_text)
 
                 if state.get("keyboard"):
-                    # Caught it - the nickname keyboard is up while the game
+                    # Caught it — the nickname keyboard is up while the game
                     # still reports "battle".  Hand it to the agent to type a name;
                     # the battle is over either way.
                     self.in_battle = False
@@ -3260,7 +3222,7 @@ class PokemonGame:
                         text_parts.extend(battle_text)
                         self.accumulated_text.extend(battle_text)
                     text_parts.append(
-                        "[You caught it! Name entry is open - type a nickname "
+                        "[You caught it! Name entry is open — type a nickname "
                         "for your new Pokémon.]"
                     )
                     self._prev_mode = "keyboard"
@@ -3280,7 +3242,7 @@ class PokemonGame:
                         text_parts.extend(battle_text)
                         self.accumulated_text.extend(battle_text)
                     # Text that landed in the same frame as the prompt (e.g.
-                    # "TRAINER sent out SANDSHREW!") is still unread - the
+                    # "TRAINER sent out SANDSHREW!") is still unread — the
                     # auto-advance bails before collecting it.
                     for line in state.get("tolk_output", []) or []:
                         clean = line.strip()
@@ -3299,9 +3261,9 @@ class PokemonGame:
                         label = (f"{party_mon_name(mon)} Lv{mon.get('level', 0)} "
                                  f"({hp}/{max_hp} HP{_hp_descriptor(hp, max_hp)})")
                         if hp <= 0:
-                            label += " - FAINTED, can't fight"
+                            label += " — FAINTED, can't fight"
                         elif i == active_idx:
-                            label += " - ALREADY OUT (picking this keeps it in)"
+                            label += " — ALREADY OUT (picking this keeps it in)"
                         choice_map[ch] = {
                             "action": "party_select", "index": i,
                             "label": label, "party": party,
@@ -3312,7 +3274,7 @@ class PokemonGame:
                     choice_map[ch] = {"action": "party_cancel", "label": "Back",
                                       "active_index": active_idx}
                     text_parts.append(f"{ch}. Back (keep your current Pokémon "
-                                      " - only works if you weren't forced to switch)")
+                                      "— only works if you weren't forced to switch)")
                     self._prev_mode = "battle"
                     return "\n".join(text_parts), choice_map, {
                         "mode": "battle", "state": state, "options": [],
@@ -3341,7 +3303,7 @@ class PokemonGame:
                     keep_label = f"Keep {active} in" if active else "Keep your current Pokémon"
                     text_parts.append("")
                     text_parts.append("The other trainer is sending out a new Pokémon. "
-                                      "You may switch first - this is optional.")
+                                      "You may switch first — this is optional.")
                     choice_map = {
                         "A": {"action": "switch_prompt", "switch": True,
                               "label": "Switch to a different Pokémon"},
@@ -3349,14 +3311,14 @@ class PokemonGame:
                               "label": keep_label},
                     }
                     text_parts.append("A. Switch to a different Pokémon")
-                    text_parts.append(f"B. {keep_label} - the battle just continues")
+                    text_parts.append(f"B. {keep_label} — the battle just continues")
                     self._prev_mode = "battle"
                     return "\n".join(text_parts), choice_map, {
                         "mode": "battle", "state": state, "options": [],
                     }
 
                 if state.get("mode") != "battle":
-                    # Battle ended - store text for next interactive state
+                    # Battle ended — store text for next interactive state
                     self.in_battle = False
                     self._pending_sub_menu = None  # clear any stale sub-menu
                     if not self.first_battle_completed and self.first_battle_seen:
@@ -3370,7 +3332,7 @@ class PokemonGame:
                     self._pending_text.append("[Battle ended]")
                     self.accumulated_text.extend(battle_text)
                     self._prev_mode = "battle"
-                    return None  # Retry - next state will include the text
+                    return None  # Retry — next state will include the text
 
                 # Wait for valid battle data
                 for _ in range(20):
@@ -3399,7 +3361,7 @@ class PokemonGame:
                             if battle_text:
                                 self._pending_text.extend(battle_text)
                             self._pending_text.append("[Battle ended]")
-                            return None  # Retry - next state will include the text
+                            return None  # Retry — next state will include the text
                         options = _get_battle_options(state)
                         if options:
                             break
@@ -3413,9 +3375,9 @@ class PokemonGame:
                         send_command("INTERACT")
                         time.sleep(0.5)
                         self._prev_mode = "battle"
-                        return None  # Retry - more battle text coming
+                        return None  # Retry — more battle text coming
 
-                # Format battle output - include any pending text from previous states
+                # Format battle output — include any pending text from previous states
                 text_parts = []
                 if self._pending_text:
                     text_parts.extend(self._pending_text)
@@ -3434,9 +3396,9 @@ class PokemonGame:
                     self._prev_mode = "battle"
                     if text_parts:
                         self._pending_text.extend(text_parts)
-                    return None  # Retry - more battle text coming
+                    return None  # Retry — more battle text coming
 
-                # Wild Pokémon capture hint - show when enemy HP is low
+                # Wild Pokémon capture hint — show when enemy HP is low
                 if hint("battle_tips") and _battle_data_valid(state):
                     battle = _get_battle_info(state)
                     battle_type = battle.get("battle_type", 0)
@@ -3468,7 +3430,7 @@ class PokemonGame:
                             text_parts.append(f"[Note: This wild Pokémon is at {hp_pct}% HP so a Poké "
                                               f"Ball would probably work, but you already have a "
                                               f"{enemy_nm.title()} on your team. Poké Balls cost money "
-                                              f" - only spend one on a Pokémon you actually want. "
+                                              f"— only spend one on a Pokémon you actually want. "
                                               f"Otherwise just beat it for the EXP.]")
                         elif party_full:
                             text_parts.append(f"[Note: This wild Pokémon is at {hp_pct}% HP, but "
@@ -3492,7 +3454,7 @@ class PokemonGame:
                         f"[Note: you have opened a sub-menu and backed straight "
                         f"out of it {self._battle_cancel_streak} times in a row "
                         f"without doing anything. The battle is NOT stuck or "
-                        f"glitched - it is waiting on you. Pick FIGHT and attack; "
+                        f"glitched — it is waiting on you. Pick FIGHT and attack; "
                         f"winning or running is the only way out of a battle.]")
 
                 # Build choice map for battle
@@ -3582,12 +3544,12 @@ class PokemonGame:
                             time.sleep(0.15)
                     send_command("INTERACT")
                     time.sleep(0.5)
-                    return None  # Retry - title screen will transition
+                    return None  # Retry — title screen will transition
 
                 # Auto-handle POKéMON party screen
                 # The bridge reports "Choose a POKéMON." and HP values as menu items
                 # instead of Pokemon names. Read tile_map directly for reliable status.
-                # Also check text_lines - bridge may put "Choose a POKéMON." there instead.
+                # Also check text_lines — bridge may put "Choose a POKéMON." there instead.
                 text_lines_check = state.get("text_lines", [])
                 if (any("CHOOSE A" in it.upper() for it in upper_items)
                         or any("CHOOSE A" in t.upper() for t in text_lines_check)):
@@ -3620,7 +3582,7 @@ class PokemonGame:
                         # Must start with a letter (Pokémon names always do)
                         if not clean[0].isalpha():
                             continue
-                        # Likely a Pokémon name - grab it
+                        # Likely a Pokémon name — grab it
                         # Strip trailing level/HP if on same line (e.g. "BLAZE  :L5")
                         name_part = clean.split(":L")[0].split("Lv")[0].split("LV")[0].strip()
                         if name_part and len(name_part) >= 2:
@@ -3647,7 +3609,8 @@ class PokemonGame:
                             break
 
                     if self._item_use_pending:
-                        # This party screen is "use item on which POKéMON?" - # confirm the highlighted one instead of backing out.
+                        # This party screen is "use item on which POKéMON?" —
+                        # confirm the highlighted one instead of backing out.
                         self._item_use_pending = False
                         send_command("INTERACT")
                         time.sleep(0.6)
@@ -3670,10 +3633,10 @@ class PokemonGame:
                             time.sleep(0.2)
                         if used_lines:
                             self._pending_text.extend(used_lines)
-                        return None  # Retry - land on whatever screen follows
+                        return None  # Retry — land on whatever screen follows
 
                     if len(hp_lines) <= 1:
-                        # Only 1 Pokémon - show status info, then auto-cancel back
+                        # Only 1 Pokémon — show status info, then auto-cancel back
                         send_command("CANCEL")
                         time.sleep(0.3)
                         status_parts = []
@@ -3683,17 +3646,17 @@ class PokemonGame:
                             status_parts.append(pkmn_level)
                         if pkmn_hp:
                             status_parts.append(pkmn_hp)
-                        status_line = " - ".join(status_parts) if status_parts else "status unknown"
+                        status_line = " — ".join(status_parts) if status_parts else "status unknown"
                         self._pending_text.append(f"Your Pokémon: {status_line}. Only one Pokémon, no one to switch with.")
-                        return None  # Retry - will return to previous menu
+                        return None  # Retry — will return to previous menu
 
                 # Item action sub-menu (USE / TOSS).  The agent already picked the item
-                # from the bag, so pressing USE is the obvious follow-up - don't
+                # from the bag, so pressing USE is the obvious follow-up — don't
                 # make it choose again, and never silently back out.  If the game
                 # refuses ("This isn't the time to use that!"), surface that note.
                 if "USE" in upper_items and "TOSS" in upper_items:
                     # TOWN MAP opens a full-screen graphic the bridge can't read
-                    # - it reports mode "overworld" with no menu, so every choice
+                    # — it reports mode "overworld" with no menu, so every choice
                     # after that quietly does nothing and even SAVE can't find
                     # the START menu.  Never open it; back out and describe the
                     # region instead.
@@ -3702,7 +3665,7 @@ class PokemonGame:
                         time.sleep(0.3)
                         self._selected_item_name = ""
                         self._pending_text.extend(_town_map_text(self.current_location))
-                        return None  # Retry - back on the bag list
+                        return None  # Retry — back on the bag list
 
                     use_idx = upper_items.index("USE")
                     if selected >= 0:
@@ -3747,26 +3710,26 @@ class PokemonGame:
                     if refused:
                         self._item_use_pending = False
                         self._pending_text.append(
-                            f"You can't use that here - {' '.join(said)}"
+                            f"You can't use that here — {' '.join(said)}"
                             if said else "You can't use that item right now."
                         )
                     elif said:
                         self._pending_text.extend(said)
-                    return None  # Retry - show whatever screen we landed on
+                    return None  # Retry — show whatever screen we landed on
 
                 # Auto-handle empty menus (e.g. ITEM with no items)
-                # If the only option is CANCEL, there's nothing to do - auto-cancel
+                # If the only option is CANCEL, there's nothing to do — auto-cancel
                 non_cancel = [it for it in upper_items if it not in ("CANCEL",)]
                 if not non_cancel and "CANCEL" in upper_items:
                     send_command("CANCEL")
                     time.sleep(0.3)
                     self._pending_text.append("No items in your bag!")
-                    return None  # Retry - will return to previous menu
+                    return None  # Retry — will return to previous menu
 
                 # Mart quantity spinner.  Gen 1 leaves this box drawn while
                 # "That will be ¥N. OK?" prints underneath it, so the generic
                 # menu path handed the agent the same "×01" screen two turns running
-                # and again after "Here you are!" - four choices to buy one
+                # and again after "Here you are!" — four choices to buy one
                 # Potion, two of which did nothing.  Drive the confirmation
                 # here so one pick completes the purchase.
                 if _is_qty_box(menu_items):
@@ -3784,15 +3747,15 @@ class PokemonGame:
                     player_money = state.get("player_money")
                     if player_money is not None:
                         text_parts.append(f"[Your balance: ${player_money}]")
-                    text_parts.append(f"The clerk is ringing up {item_name} - {qty_entry}")
+                    text_parts.append(f"The clerk is ringing up {item_name} — {qty_entry}")
                     choice_map = {
                         "A": {"action": "buy_confirm",
                               "label": f"{item_name} {qty_entry}"},
                         "B": {"action": "cancel", "label": "Don't buy it"},
                     }
-                    text_parts.append(f"A. Buy it ({qty_entry}) - this finishes the "
+                    text_parts.append(f"A. Buy it ({qty_entry}) — this finishes the "
                                       "purchase, no further confirmation")
-                    text_parts.append("B. Don't buy it - back to the shelf")
+                    text_parts.append("B. Don't buy it — back to the shelf")
                     self._prev_mode = "menu"
                     return "\n".join(text_parts), choice_map, {"mode": "menu"}
 
@@ -3814,7 +3777,7 @@ class PokemonGame:
                         # the visible window, which only sees ~4 rows.
                         self._item_list_cache = (menu_items, selected, True)
                     else:
-                        # Scroll scan failed - fall back to the on-screen reader
+                        # Scroll scan failed — fall back to the on-screen reader
                         visible_items, cursor_idx = _read_visible_item_list(state)
                         if visible_items:
                             menu_items = visible_items
@@ -3825,7 +3788,7 @@ class PokemonGame:
                 is_name_menu = "NEW NAME" in upper_items
 
                 # Detect player name from START menu context:
-                # The START menu contains known items - any unknown short
+                # The START menu contains known items — any unknown short
                 # alphabetic item is the player name (works for mixed-case names like "Ash")
                 _KNOWN_MENU_ITEMS = {"EXIT", "CANCEL", "ITEM", "POKÉMON", "POKÉDEX",
                                      "POKEDEX", "POKéMON", "POKéDEX",
@@ -3888,23 +3851,23 @@ class PokemonGame:
                     # Gen 1's PC labels are misleading: the player's own PC is
                     # for items, while SOMEONE'S/BILL'S PC stores Pokemon.
                     if upper in ("SOMEONE'S PC", "BILL'S PC"):
-                        display_label = f"{item} - Pokemon storage (use this)"
+                        display_label = f"{item} — Pokemon storage (use this)"
                     elif (upper.endswith("'S PC")
                           and "PROF.OAK" not in upper
                           and upper not in ("SOMEONE'S PC", "BILL'S PC")):
-                        display_label = f"{item} - item storage only, not Pokemon"
+                        display_label = f"{item} — item storage only, not Pokemon"
                     elif upper == "PROF.OAK'S PC":
-                        display_label = f"{item} - Pokedex evaluation, not storage"
+                        display_label = f"{item} — Pokedex evaluation, not storage"
                     elif upper == "DEPOSIT PKMN":
-                        display_label = f"{item} - safely store a party Pokemon"
+                        display_label = f"{item} — safely store a party Pokemon"
                     elif upper == "RELEASE PKMN":
-                        display_label = f"{item} - PERMANENTLY LOSE a Pokemon; DO NOT USE"
-                    # Add item usage hints (e.g. "PARLYZ HEAL x1 - cures paralysis ONLY")
+                        display_label = f"{item} — PERMANENTLY LOSE a Pokemon; DO NOT USE"
+                    # Add item usage hints (e.g. "PARLYZ HEAL x1 — cures paralysis ONLY")
                     # Strip a merged mart price ("POTION  ¥300") the same way
                     item_base = item.split("¥")[0].split("x")[0].strip().split("×")[0].strip().upper()
                     item_hint = _ITEM_HINTS.get(item_base, "") if hint("item_descriptions") else ""
                     if item_hint:
-                        display_label = f"{display_label} - {item_hint}"
+                        display_label = f"{display_label} — {item_hint}"
                     choice_map[ch] = {
                         "action": "menu_select",
                         "index": orig_idx,
@@ -3937,12 +3900,12 @@ class PokemonGame:
                 if "DEPOSIT PKMN" in filtered_upper and "RELEASE PKMN" in filtered_upper:
                     text_parts.append(
                         "[STORAGE SAFETY: To make party room, choose DEPOSIT PKMN. "
-                        "Never choose RELEASE PKMN - it permanently gives up a "
+                        "Never choose RELEASE PKMN—it permanently gives up a "
                         "Pokemon. If deposit seems to fail, retry DEPOSIT or cancel; "
                         "RELEASE is not a fallback.]"
                     )
 
-                # Starter Pokemon hint - when choosing between a starter and CANCEL
+                # Starter Pokemon hint — when choosing between a starter and CANCEL
                 _STARTERS = {"CHARMANDER", "SQUIRTLE", "BULBASAUR"}
                 chosen_starter = filtered_upper & _STARTERS
                 if chosen_starter and hint("story_notes"):
@@ -4034,7 +3997,7 @@ class PokemonGame:
                         c_dir = obj.get("connection_dir", "")
                         c_name = obj.get("name", "")
                         if c_dir and c_name:
-                            # Strip "North connection, " prefix - just show destination
+                            # Strip "North connection, " prefix — just show destination
                             parts = c_name.split(", ", 1)
                             dest = parts[1] if len(parts) > 1 else c_name
                             dir_hints.append(f"{c_dir.capitalize()} \u2192 {dest}")
@@ -4054,7 +4017,7 @@ class PokemonGame:
                         party_strs.append(f"{name} Lv{lv} ({hp}/{max_hp} HP{hp_desc})")
                     text_parts.append(f"[Party: {', '.join(party_strs)}]")
 
-                # Bag line - the in-game menu is no longer offered, so the bag
+                # Bag line — the in-game menu is no longer offered, so the bag
                 # has to be visible here or the agent can't know what it's carrying.
                 bag = read_bag(state)
                 bag_line = format_bag_line(bag)
@@ -4099,7 +4062,7 @@ class PokemonGame:
                 choice_map = {}
                 letter_idx = 0
 
-                # Object list (connections excluded - shown as directions instead)
+                # Object list (connections excluded — shown as directions instead)
                 non_conn_objects = [
                     o for o in objects
                     if o.get("type") != "connection"
@@ -4121,13 +4084,13 @@ class PokemonGame:
                         if not hint("navigation"):
                             pass
                         elif (obj_x, obj_y) in self._blocked_objects:
-                            mark = " (blocked - trees or walls in the way)"
+                            mark = " (blocked — trees or walls in the way)"
                         elif (obj_x, obj_y) in self.interacted_objects:
                             mark = " (already interacted)"
                         elif (obj_type == "warp" and self._just_left_location
                               and name.upper().replace("'", "").replace(" ", "")
                               == self._just_left_location.upper().replace("'", "").replace(" ", "")):
-                            mark = " (you just exited here, explore elsewhere)"
+                            mark = " (you just exited here — explore elsewhere)"
 
                         dist = obj.get("dist", "")
                         dist_str = f" - {dist}" if dist else ""
@@ -4146,7 +4109,7 @@ class PokemonGame:
                     text_parts.append("(No objects nearby)")
 
                 # Directional walking (outdoor maps only).  Indoors there is
-                # nothing to explore by compass - everything worth doing is in
+                # nothing to explore by compass — everything worth doing is in
                 # the Nearby list, and offering directions there just gave the agent
                 # a way to walk into walls.  Viridian Forest is tagged outdoor
                 # in _init_map_db() so it keeps its directions.
@@ -4171,8 +4134,8 @@ class PokemonGame:
                         letter_idx += 1
 
                 # The in-game START menu is no longer offered as a choice.  the agent
-                # got stuck in it - open it to heal, find no Potion, close it,
-                # repeat - and everything it held is either on screen already
+                # got stuck in it — open it to heal, find no Potion, close it,
+                # repeat — and everything it held is either on screen already
                 # (party HP, bag) or reachable through the named actions below.
                 # open_start_menu() and the menu handler stay: saving and these
                 # actions still drive them internally.
@@ -4195,7 +4158,7 @@ class PokemonGame:
                         "label": f"Use a {heal_item} on {hurt[0]}",
                     })
 
-                # Field moves (CUT, SURF, ...) - only once a party member
+                # Field moves (CUT, SURF, ...) — only once a party member
                 # actually knows one.  This is why the menu machinery is kept.
                 for idx, mon_name, move in party_field_moves(state):
                     extra_actions.append({
@@ -4207,7 +4170,7 @@ class PokemonGame:
 
                 # The TOWN MAP opens a full-screen graphic the bridge can't
                 # read, so it is answered with text instead of ever being
-                # opened - same interception as the bag route, one step shorter.
+                # opened — same interception as the bag route, one step shorter.
                 if any(name.upper() == "TOWN MAP" for name, _ in bag):
                     extra_actions.append({
                         "action": "town_map",
@@ -4243,11 +4206,11 @@ class PokemonGame:
                     last_action = self._recent_actions[-1] if self._recent_actions else ""
                     if "Walking" in last_action and "..." in last_action:
                         last_dir = last_action.split("Walking ")[-1].split("...")[0]
-                        final_text += f"\n\n[Note: Your last move ({last_dir}) didn't change your position - you may be at the edge of this area or blocked by a wall. Try a different direction or interact with something from the Nearby list instead.]"
+                        final_text += f"\n\n[Note: Your last move ({last_dir}) didn't change your position — you may be at the edge of this area or blocked by a wall. Try a different direction or interact with something from the Nearby list instead.]"
                     elif "Walking" not in last_action:
                         pass  # non-movement action (menu, etc.) - state not changing is expected
                     else:
-                        final_text += "\n\n[Note: Nothing has changed since your last action. Try a different choice - pick something from the Nearby list or go a different direction.]"
+                        final_text += "\n\n[Note: Nothing has changed since your last action. Try a different choice — pick something from the Nearby list or go a different direction.]"
                 self._prev_state_text = "\n".join(text_parts)  # store without the stuck note
 
                 self._prev_mode = "overworld"
@@ -4311,7 +4274,7 @@ class PokemonGame:
 
                 # NOTE: there is deliberately NO BFS "is it reachable?" pre-check
                 # here.  Predicting blockage produced false positives on counters
-                # (Mart clerks, Pokecenter nurses) - Gen 1 lets you talk ACROSS a
+                # (Mart clerks, Pokecenter nurses) — Gen 1 lets you talk ACROSS a
                 # counter tile even though no adjacent cell is walkable, so a
                 # perfectly reachable NPC looked unreachable and the walk was
                 # refused.  Instead: always attempt the walk, retry once, and only
@@ -4349,10 +4312,7 @@ class PokemonGame:
                     if not _interaction_happened(retry_state, after_state, screen_lines):
                         if obj_x >= 0 and obj_y >= 0:
                             self._blocked_objects.add((obj_x, obj_y))
-                        if not hint("navigation"):
-                            return (f"Couldn't reach {target_name} - you walked at it twice "
-                                    f"and something is in the way (trees or a wall).")
-                        return (f"Couldn't reach {target_name} - you walked at it twice "
+                        return (f"Couldn't reach {target_name} — you walked at it twice "
                                 f"and something is in the way (trees or a wall). "
                                 f"It's marked blocked now; try approaching from a "
                                 f"different direction.")
@@ -4384,7 +4344,7 @@ class PokemonGame:
                             break
                         new_id = check.get("map_id", -1)
                         if new_id != old_map_id:
-                            # Warp succeeded - record where we just came from
+                            # Warp succeeded — record where we just came from
                             warp_succeeded = True
                             self._just_left_location = old_location
                             self._just_left_remaining = 4
@@ -4406,8 +4366,8 @@ class PokemonGame:
 
                     if not warp_succeeded:
                         # Only reported after 8 real attempts to step through the
-                        # warp - this is an observed failure, not a prediction.
-                        return (f"Couldn't get through to {target_name} - something is in the way. "
+                        # warp — this is an observed failure, not a prediction.
+                        return (f"Couldn't get through to {target_name} — something is in the way. "
                                 f"Try walking around it first, or pick something else.")
 
                 result = f"Walking to {target_name}..."
@@ -4491,8 +4451,6 @@ class PokemonGame:
                         _send_moves([direction] * 3, self.vba_hwnd)
                     else:
                         alt = "East or West" if direction in ("up", "down") else "North or South"
-                        if not hint("navigation"):
-                            return f"Can't go {choice['label']} - blocked!"
                         return f"Can't go {choice['label']} - blocked! Try {alt}."
                 else:
                     steps = 5
@@ -4508,7 +4466,7 @@ class PokemonGame:
             elif action == "heal_pokemon":
                 # Drives START -> ITEM -> the item, then stops.  The USE/TOSS
                 # interception and _item_use_pending party confirm in
-                # get_game_state() finish the job - same path a bag selection
+                # get_game_state() finish the job — same path a bag selection
                 # always took, just without the agent having to walk the menu.
                 item_name = choice.get("item", "").upper()
                 open_start_menu()
@@ -4522,7 +4480,7 @@ class PokemonGame:
                 if not scanned:
                     send_command("CANCEL")
                     return "Couldn't read your bag."
-                # _scan_item_list scrolled to the bottom - park back at the top
+                # _scan_item_list scrolled to the bottom — park back at the top
                 # so the index below is measured from a known position.
                 for _ in range(len(scanned)):
                     send_command("NAV:UP")
@@ -4593,7 +4551,7 @@ class PokemonGame:
                 return "\n".join(said) if said else f"Used {move}."
 
             elif action == "town_map":
-                # Never actually opened - the real TOWN MAP is a full-screen
+                # Never actually opened — the real TOWN MAP is a full-screen
                 # graphic the bridge reads as an empty overworld, which used to
                 # softlock the session.  Answer with the same text the USE/TOSS
                 # interception uses.
@@ -4611,7 +4569,7 @@ class PokemonGame:
                 time.sleep(0.6)
 
                 # Poll until the menu ACTUALLY changes.  Never accept
-                # FIGHT/PKMN/ITEM/RUN as a sub-menu - that's the main
+                # FIGHT/PKMN/ITEM/RUN as a sub-menu — that's the main
                 # battle menu being read back before the transition.
                 _MAIN_MENU = {"FIGHT", "PKMN", "ITEM", "RUN"}
                 sub_options = []
@@ -4628,9 +4586,9 @@ class PokemonGame:
                             # Real sub-menu (move names, etc.)
                             sub_options = opts
                             break
-                        # Still showing main menu - keep waiting
+                        # Still showing main menu — keep waiting
                     elif target_idx != 0:
-                        # Menu disappeared - sub-screen for PKMN/ITEM/RUN
+                        # Menu disappeared — sub-screen for PKMN/ITEM/RUN
                         break
                     # For FIGHT: keep waiting even if menu is
                     # temporarily empty during transition
@@ -4656,7 +4614,7 @@ class PokemonGame:
 
                     if target_idx == 1:  # PKMN
                         # Party size comes from RAM, not from counting "LV"
-                        # lines in the screen reader text - that text arrives a
+                        # lines in the screen reader text — that text arrives a
                         # line at a time and the loop above breaks as soon as
                         # the prompt appears, so a full party read as one.
                         pkmn_count = len((read_state() or state).get("party", []) or [])
@@ -4697,11 +4655,11 @@ class PokemonGame:
                             elif not has_balls:
                                 result += "\n[You have no Poké Balls! Visit a mart to buy some after this battle.]"
                             elif len((scan_state.get("party", []) or [])) >= 6:
-                                result += ("\n[Your party is full (6 Pokémon) - a Poké Ball may be refused. "
+                                result += ("\n[Your party is full (6 Pokémon) — a Poké Ball may be refused. "
                                            "Deposit a Pokémon in the PC at a Pokémon Center to make room.]")
                             return result
                     if target_idx == 3:  # RUN
-                        # RUN was already pressed - collect result text
+                        # RUN was already pressed — collect result text
                         self._battle_cancel_streak = 0
                         time.sleep(1.0)
                         s = read_state()
@@ -4738,9 +4696,9 @@ class PokemonGame:
             elif action == "battle_sub_select":
                 target_idx = choice["index"]
                 sub_options = choice.get("options", [])
-                self._pending_sub_menu = None  # clear - player made their choice
+                self._pending_sub_menu = None  # clear — player made their choice
 
-                # Block moves with 0 PP - UNLESS all moves are 0 PP,
+                # Block moves with 0 PP — UNLESS all moves are 0 PP,
                 # in which case the game uses Struggle automatically.
                 selected_opt = sub_options[target_idx] if target_idx < len(sub_options) else ""
                 all_moves_empty = all("(PP: 0)" in o for o in sub_options if "PP:" in o)
@@ -4748,7 +4706,7 @@ class PokemonGame:
                     move_name = selected_opt.split("(")[0].strip()
                     # Re-present the same sub-menu so the agent picks a different move
                     self._pending_sub_menu = sub_options
-                    return f"Can't use {move_name} - no PP left! Pick a different move. (PP refills when you visit a Pokémon Center.)"
+                    return f"Can't use {move_name} — no PP left! Pick a different move. (PP refills when you visit a Pokémon Center.)"
 
                 self._battle_cancel_streak = 0  # something actually happened
                 fresh = read_state()
@@ -4768,7 +4726,7 @@ class PokemonGame:
 
                         An empty bag means the bridge didn't report one, not
                         that it has nothing.  A readable bag without the item
-                        is a real zero - that's the last-ball-spent case.
+                        is a real zero — that's the last-ball-spent case.
                         """
                         bag = read_bag(st or {})
                         if not bag:
@@ -4781,7 +4739,7 @@ class PokemonGame:
                     qty_before = _qty_of(fresh)
                     if not _item_menu_select_by_name(item_name, len(sub_options)):
                         _cancel_to_battle_menu(read_state() or fresh)
-                        return (f"Couldn't get the cursor onto {item_name} - the bag "
+                        return (f"Couldn't get the cursor onto {item_name} — the bag "
                                 f"menu didn't respond. Nothing was used; try ITEM again.")
 
                     # Poll for result instead of blind delay
@@ -4829,12 +4787,12 @@ class PokemonGame:
                             if base_name in _BALL_NAMES:
                                 self._ball_refused_this_battle = True
                                 if len(after.get("party", []) or []) >= 6:
-                                    return (f"Can't use {item_name} - your party is full (6 Pokémon) and "
+                                    return (f"Can't use {item_name} — your party is full (6 Pokémon) and "
                                             f"there's no room to store another. Deposit a Pokémon in the PC "
                                             f"at a Pokémon Center before trying to catch anything else.")
                                 return (f"The game refused {item_name} and the ball was NOT used up."
                                         f"{reason} In a wild battle a Poké Ball is only refused when "
-                                        f"there is nowhere to put the Pokémon - a status condition like "
+                                        f"there is nowhere to put the Pokémon — a status condition like "
                                         f"poison never blocks a catch, it helps. Do NOT retry the same "
                                         f"ball this battle: beat this Pokémon or RUN, and report the "
                                         f"message above so it can be looked at.")
@@ -4844,7 +4802,7 @@ class PokemonGame:
 
                     return f"Used {item_name}."
                 else:
-                    # Move menu - navigate from tracked cursor position.
+                    # Move menu — navigate from tracked cursor position.
                     # Gen 1 remembers cursor between turns; we track it.
                     _move_menu_select(self._move_cursor, target_idx, len(sub_options))
                     self._move_cursor = target_idx  # update tracked position
@@ -4861,7 +4819,7 @@ class PokemonGame:
                     return "Move selected."
 
             elif action == "battle_sub_cancel":
-                self._pending_sub_menu = None  # clear - player cancelled
+                self._pending_sub_menu = None  # clear — player cancelled
                 self._battle_cancel_streak += 1
                 send_command("CANCEL")
                 time.sleep(0.3)
@@ -4882,12 +4840,12 @@ class PokemonGame:
                 if target_idx == choice.get("active_index", -1):
                     # Confirming the Pokémon that is already out just gets
                     # "X is already out!" and the list redrawn, forever.  Back
-                    # out instead - on an optional switch that IS "keep it in".
+                    # out instead — on an optional switch that IS "keep it in".
                     send_command("CANCEL")
                     time.sleep(0.4)
                     s = read_state()
                     if s and _party_select_showing(s):
-                        return (f"{name} is already out - this switch is forced, "
+                        return (f"{name} is already out — this switch is forced, "
                                 f"so you have to pick a DIFFERENT Pokémon.")
                     return f"Kept {name} in the battle."
                 _party_menu_select(choice.get("active_index", -1),
@@ -4904,7 +4862,7 @@ class PokemonGame:
                         time.sleep(0.4)
                         s = read_state()
                         if s and _party_select_showing(s):
-                            return (f"{name} is already out - pick a DIFFERENT "
+                            return (f"{name} is already out — pick a DIFFERENT "
                                     f"Pokémon, this switch is forced.")
                         return f"Kept {name} in the battle."
                 # Never claim the requested Pokémon was sent unless battle RAM
@@ -4934,8 +4892,8 @@ class PokemonGame:
                 time.sleep(0.4)
                 s = read_state()
                 if s and _party_select_showing(s):
-                    # Forced switch - the game won't take B for an answer.
-                    return ("You have to send out a Pokémon - you can't back "
+                    # Forced switch — the game won't take B for an answer.
+                    return ("You have to send out a Pokémon — you can't back "
                             "out of this one.")
                 return "Kept your current Pokémon."
 
@@ -4951,7 +4909,7 @@ class PokemonGame:
                         time.sleep(0.15)
                     send_command("INTERACT")
                     time.sleep(0.5)
-                    return "Opening your party - pick who goes in."
+                    return "Opening your party — pick who goes in."
                 send_command("CANCEL")
                 # Wait for the box to actually close.  If the prompt text is
                 # still on screen when the next state is read it gets presented
@@ -4968,7 +4926,7 @@ class PokemonGame:
                 selected = choice.get("selected", -1)
                 total = choice.get("total", 0)
 
-                # Remember the entry name - if a USE/TOSS sub-menu comes back,
+                # Remember the entry name — if a USE/TOSS sub-menu comes back,
                 # this is the item it belongs to.  Strip the quantity the same
                 # way the item hints do.
                 raw_label = choice.get("label", "")
@@ -5040,7 +4998,7 @@ class PokemonGame:
                                 response_lines.append(clean)
                         break
                     else:
-                        # Still in menu - check if menu items changed (sub-menu appeared)
+                        # Still in menu — check if menu items changed (sub-menu appeared)
                         new_items = s.get("menu_items", [])
                         if new_items and new_items != pre_items:
                             break  # new sub-menu appeared, let get_state() handle it
@@ -5161,7 +5119,7 @@ class PokemonGame:
                         send_command("INTERACT")
                         answered = True
 
-                # Press through "Here you are!  Thank you!" - but check the
+                # Press through "Here you are!  Thank you!" — but check the
                 # screen BEFORE each press, or the first A landing back on the
                 # shelf starts a second purchase.
                 for _ in range(15):
@@ -5178,7 +5136,7 @@ class PokemonGame:
                 joined = " ".join(said).upper()
                 if any(p in joined for p in ("NOT ENOUGH", "CAN'T CARRY",
                                              "CAN'T AFFORD")):
-                    return f"Couldn't buy {label} - {' '.join(said)}"
+                    return f"Couldn't buy {label} — {' '.join(said)}"
                 money = (read_state() or {}).get("player_money")
                 bought = f"Bought {label}."
                 if money is not None:
@@ -5193,7 +5151,7 @@ class PokemonGame:
                 pre_text = pre.get("text_lines", [])
                 pre_mode = pre.get("mode")
                 send_command("CANCEL")
-                # Poll until the screen actually changes - a flat sleep can read
+                # Poll until the screen actually changes — a flat sleep can read
                 # the pre-cancel frame back and show the same menu again, so the agent
                 # sees the prompt it just backed out of.
                 for _ in range(10):
@@ -5249,13 +5207,13 @@ class PokemonGame:
         def _save_sync():
             print("Save:Starting in-game save...")
 
-            # Make sure we're in overworld first - cancel out of any menus/dialogue
+            # Make sure we're in overworld first — cancel out of any menus/dialogue
             state = read_state()
             mode = state.get("mode", "") if state else ""
             print(f"Save:Current mode: {mode}")
 
             if mode == "battle":
-                print("Save:In battle - skipping in-game save")
+                print("Save:In battle — skipping in-game save")
                 return False
 
             # If already in START menu, try to use it directly
@@ -5264,10 +5222,10 @@ class PokemonGame:
                 items, sel = get_menu_items(s)
                 upper_check = [it.strip().upper() for it in items]
                 if "SAVE" in upper_check:
-                    print("Save:Already in START menu - navigating to SAVE directly")
+                    print("Save:Already in START menu — navigating to SAVE directly")
                 else:
-                    # In a different menu (items, party, etc.) - exit to overworld first
-                    print("Save:In non-START menu - pressing B to exit...")
+                    # In a different menu (items, party, etc.) — exit to overworld first
+                    print("Save:In non-START menu — pressing B to exit...")
                     for _ in range(8):
                         send_command("CANCEL")
                         time.sleep(0.3)
@@ -5277,9 +5235,9 @@ class PokemonGame:
                     s = None  # force re-open below
 
             elif mode == "dialogue":
-                print("Save:In dialogue - pressing B/A to exit...")
+                print("Save:In dialogue — pressing B/A to exit...")
                 for i in range(8):
-                    # Alternate A and B - the save/badge screen needs A to advance
+                    # Alternate A and B — the save/badge screen needs A to advance
                     send_command("INTERACT" if i % 2 == 0 else "CANCEL")
                     time.sleep(0.3)
                     state = read_state()
@@ -5300,7 +5258,7 @@ class PokemonGame:
                     s = read_state()
                     if s and s.get("mode") == "menu":
                         break
-                    # May still be in dialogue/transition - press B and retry
+                    # May still be in dialogue/transition — press B and retry
                     send_command("CANCEL")
                     time.sleep(0.5)
                     s = None
@@ -5313,12 +5271,12 @@ class PokemonGame:
             print(f"Save:Menu items: {upper_items}, selected: {sel}")
 
             if "SAVE" not in upper_items:
-                # This isn't the START menu - a sub-menu (the bag, most likely)
+                # This isn't the START menu — a sub-menu (the bag, most likely)
                 # was already open when START was pressed, so START just closed
                 # something instead of opening the main menu.  Back all the way
                 # out to the overworld and open it once more before giving up;
                 # the .sav is worth one retry.
-                print("Save:Not the START menu - backing out and retrying once")
+                print("Save:Not the START menu — backing out and retrying once")
                 for _ in range(8):
                     send_command("CANCEL")
                     time.sleep(0.3)
@@ -5334,7 +5292,7 @@ class PokemonGame:
                 print(f"Save:Retry menu items: {upper_items}, selected: {sel}")
 
             if "SAVE" not in upper_items:
-                print("Save:SAVE not in menu - cancelling")
+                print("Save:SAVE not in menu — cancelling")
                 send_command("CANCEL")
                 return False
 
@@ -5360,7 +5318,7 @@ class PokemonGame:
             # 3. "Erase old data? Okay?" YES is default → A
             # 4. Saving animation (~2-3 sec) → wait
             # 5. "saved the game!" → A
-            # Press A 10 times with 1s gaps - more than enough
+            # Press A 10 times with 1s gaps — more than enough
             for i in range(10):
                 send_command("INTERACT")
                 time.sleep(1.0)
@@ -5368,7 +5326,7 @@ class PokemonGame:
                 s2_mode = s2.get("mode", "") if s2 else ""
                 print(f"Save:Press A #{i+1}, mode: {s2_mode}")
                 if s2_mode == "overworld":
-                    print("Save:Back to overworld - save complete!")
+                    print("Save:Back to overworld — save complete!")
                     break
 
             # Press B a few times to close any lingering menu
@@ -5382,6 +5340,11 @@ class PokemonGame:
             return True
 
         return await asyncio.to_thread(_save_sync)
+
+    async def save_and_quit(self):
+        """Crash-path shutdown.  Skips the in-game save: a crash can land
+        mid-battle where SAVE is unreachable.  quit() still closes VBA-RR."""
+        await self.quit()
 
     async def quit(self):
         """Terminate VBA-RR, clean up. Call save_state() before this."""
@@ -5454,3 +5417,13 @@ class PokemonGame:
             except json.JSONDecodeError:
                 pass
         return inputs
+
+    def get_frame_count(self) -> int:
+        """Read the current frame count from state.json."""
+        try:
+            state = read_state()
+            if state:
+                return state.get("frame_counter", 0)
+        except Exception:
+            pass
+        return 0
