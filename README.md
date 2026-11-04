@@ -9,8 +9,8 @@ Human Before the Loop designs an agent's action space and data access before run
 leaving no path open to data exfiltration or destructive actions. This method does not
 trade task reliability or capability for the security improvements it guarantees.
 
-This repo is a benchmark based on the Pokemon experimental setup from the paper, so any
-LLM can be run through the same framework and compared.
+This repo is a benchmark based on the Pokemon experimental setup from the paper. Any LLM
+can be run through the same framework and compared.
 
 ## Quick start
 
