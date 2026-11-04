@@ -138,6 +138,22 @@ def check_rom(path: Path, game: str) -> str:
             f"\"{ROM_NAMES[game]}\" (CRC32 {ROM_CRC32[game]:08X}); this file is {crc:08X}.")
 
 
+def find_rom(path: Path, game: str) -> tuple[Path | None, str]:
+    """Accept the ROM file itself or the folder it's in.
+
+    Returns (rom path, "") when the right dump is found, or (None, message).
+    """
+    path = Path(str(path).strip().strip('"'))
+    if path.is_dir():
+        for candidate in sorted(path.glob("*.gb")):
+            if rom_crc32(candidate) == ROM_CRC32[game]:
+                return candidate, ""
+        return None, (f"No Pokemon {game.title()} ROM in {path}. The benchmark needs "
+                      f"\"{ROM_NAMES[game]}\" as a .gb file.")
+    problem = check_rom(path, game)
+    return (None, problem) if problem else (path, "")
+
+
 def stage_game(game_dir: Path, rom_path: Path, game: str, save_file: Path | None) -> dict:
     """Prepare a run's own game folder: ROM copy, optional .sav, bridge and its paths.
 

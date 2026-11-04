@@ -166,9 +166,10 @@ def _ask_config() -> dict:
     _say("")
     game = _choice("Which game?", [("red", "Pokemon Red"), ("blue", "Pokemon Blue")], "red")
     while True:
-        rom = _text(f"Path to your Pokemon {game.title()} ROM (.gb file)").strip('"')
-        problem = runtime.check_rom(Path(rom), game)
-        if not problem:
+        answer = _text(f"Path to your Pokemon {game.title()} ROM (the .gb file, or the folder it's in)")
+        rom, problem = runtime.find_rom(Path(answer), game)
+        if rom:
+            _say(f"Found {rom.name}")
             break
         _say(problem)
 
@@ -214,7 +215,7 @@ def _ask_config() -> dict:
         "model_params": {"temperature": 0.7, "top_p": 0.95, "max_tokens": 3000},
         "prices": prices,
         "game": game,
-        "rom": str(Path(rom).resolve()),
+        "rom": str(rom.resolve()),
         "hints": hints_on,
         "run": {"call_cap": call_cap, "target": target, "start": start, "save_mode": save_mode},
     }
