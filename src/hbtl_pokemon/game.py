@@ -873,8 +873,12 @@ def find_vba_window(timeout=15.0, pid=None):
     return None
 
 
-def find_lua_dialog(timeout=10.0):
-    """Find the 'Lua Script' dialog window that opens after menu command."""
+def find_lua_dialog(timeout=10.0, pid=None):
+    """Find the 'Lua Script' dialog window that opens after menu command.
+
+    With a pid, only that emulator's dialog counts, so another VBA-RR that
+    happens to be open is never touched.
+    """
     start = time.time()
     while time.time() - start < timeout:
         result = []
@@ -887,6 +891,11 @@ def find_lua_dialog(timeout=10.0):
                     user32.GetWindowTextW(hwnd, buf, length + 1)
                     title = buf.value
                     if "Lua Script" in title:
+                        if pid:
+                            owner = ctypes.wintypes.DWORD()
+                            user32.GetWindowThreadProcessId(hwnd, ctypes.byref(owner))
+                            if owner.value != pid:
+                                return True
                         result.append(hwnd)
             return True
 
@@ -896,6 +905,25 @@ def find_lua_dialog(timeout=10.0):
             return result[0]
         time.sleep(0.3)
     return None
+
+
+def lua_console_text(pid):
+    """The text in VBA-RR's Lua console (the second edit box), or ""."""
+    lua_hwnd = find_lua_dialog(timeout=1, pid=pid)
+    if not lua_hwnd:
+        return ""
+    console = find_child_by_class(lua_hwnd, "Edit", 1)
+    if not console:
+        return ""
+    user32.SendMessageW.argtypes = [ctypes.wintypes.HWND, ctypes.c_uint,
+                                    ctypes.wintypes.WPARAM, ctypes.wintypes.LPARAM]
+    user32.SendMessageW.restype = ctypes.wintypes.LPARAM
+    length = user32.SendMessageW(console, WM_GETTEXTLENGTH, 0, 0)
+    if length <= 0:
+        return ""
+    buf = ctypes.create_unicode_buffer(length + 1)
+    user32.SendMessageW(console, WM_GETTEXT, length + 1, ctypes.cast(buf, ctypes.c_void_p).value)
+    return buf.value.strip()
 
 
 def find_child_by_class(parent_hwnd, class_name, nth=0):
@@ -972,7 +1000,7 @@ def auto_load_lua_script(pid=None):
     time.sleep(1.0)
 
     # Find the Lua Script dialog
-    lua_hwnd = find_lua_dialog(timeout=10)
+    lua_hwnd = find_lua_dialog(timeout=10, pid=pid)
     if not lua_hwnd:
         return False
 
@@ -2863,7 +2891,7 @@ class PokemonGame:
             time.sleep(2)
 
             # Auto-load Lua bridge
-            auto_load_lua_script(pid=self.process.pid)
+            loaded = auto_load_lua_script(pid=self.process.pid)
 
             # Find the VBA window handle
             self.vba_hwnd = find_vba_window(timeout=15, pid=self.process.pid)
@@ -2878,7 +2906,14 @@ class PokemonGame:
                     break
                 time.sleep(0.5)
             if not ready:
-                print("  The Lua bridge did not start.")
+                if not loaded:
+                    print("  The Lua bridge did not start: VBA-RR's Lua Script window "
+                          "couldn't be opened or the script couldn't be run in it.")
+                else:
+                    console = lua_console_text(self.process.pid)
+                    print("  The Lua bridge did not start. VBA-RR's Lua console says:")
+                    print("  " + (console.replace("\r\n", "\n").replace("\n", "\n  ")
+                                  if console else "(nothing)"))
                 return False
 
             # Title screen is handled by get_game_state() which auto-selects
