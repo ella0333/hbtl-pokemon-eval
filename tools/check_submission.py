@@ -95,8 +95,8 @@ def check(folder: Path) -> tuple[dict | None, list[str]]:
     if summary.get("outcome") not in FINISHED:
         problems.append(f"outcome is '{summary.get('outcome')}', not a finished run")
     start = summary.get("start", "")
-    if not (start == "new_game" or start.startswith("checkpoint:")):
-        problems.append("runs must start from a new game or a shipped checkpoint")
+    if start != "new_game":
+        problems.append("leaderboard runs must start from a new game")
     target = summary.get("target")
     if target not in MILESTONES:
         problems.append(f"unknown target '{target}'")
@@ -155,8 +155,6 @@ def _row(folder: Path, summary: dict, verified: set) -> dict:
         "submission": folder.name,
         "model": summary["model"],
         "game": summary["game"].title(),
-        "start": ("New game" if summary["start"] == "new_game"
-                  else MILESTONE_LABELS.get(summary["start"].split(":", 1)[1], summary["start"])),
         "target": MILESTONE_LABELS[summary["target"]],
         "target_rank": MILESTONES.index(summary["target"]),
         "hints": "Off" if not hints else ", ".join(h.replace("_", " ") for h in hints),
@@ -172,10 +170,10 @@ def _money(value: float) -> str:
 
 
 def _table(rows: list[dict]) -> str:
-    lines = ["| Model | Game | Start | Target | Hints | Success | Calls | Cost | Status |",
-             "|---|---|---|---|---|---|---|---|---|"]
+    lines = ["| Model | Game | Target | Hints | Success | Calls | Cost | Status |",
+             "|---|---|---|---|---|---|---|---|"]
     for r in rows:
-        lines.append(f"| {r['model']} | {r['game']} | {r['start']} | {r['target']} | {r['hints']} | "
+        lines.append(f"| {r['model']} | {r['game']} | {r['target']} | {r['hints']} | "
                      f"{'Yes' if r['success'] else 'No'} | {r['calls']} | "
                      f"{_money(r['cost_usd'])} | {r['status']} |")
     return "\n".join(lines)
@@ -196,12 +194,14 @@ def rebuild() -> int:
                 print(f"  - {p}")
             continue
         rows.append(_row(folder, summary, verified))
-    rows.sort(key=lambda r: (not r["success"], -r["target_rank"], r["calls"], r["cost_usd"]))
+    # Only runs of the same game and target are compared with each other.
+    rows.sort(key=lambda r: (r["game"], r["target_rank"], not r["success"], r["calls"], r["cost_usd"]))
 
     LEADERBOARD_JSON.write_text(json.dumps(rows, indent=2) + "\n", encoding="utf-8")
     LEADERBOARD_MD.write_text(
         "# Leaderboard\n\n"
-        "Successful runs come first, then later targets, then fewer calls. Rows are "
+        "Every run starts from a new game. Runs are grouped by game and target, and within "
+        "each group successful runs come first, then fewer calls. Rows are "
         "self-reported until the logs have been looked at and the run is marked verified.\n\n"
         + (_table(rows) if rows else "No runs have been submitted yet.") + "\n",
         encoding="utf-8")

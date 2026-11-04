@@ -44,7 +44,6 @@ from hbtl_pokemon.results import (  # noqa: E402
 
 CONFIG_PATH = ROOT / "config.yaml"
 SAVES = ROOT / "saves"
-CHECKPOINTS = ROOT / "checkpoints"
 RUNS_DIR = runtime.RUNTIME / "runs"
 
 # The context window, as in the paper's constrained harness: the system
@@ -129,7 +128,6 @@ def plan_start(config: dict) -> dict:
     game = config["game"]
     run_cfg = config["run"]
     mode = run_cfg.get("save_mode", "new")
-    start = run_cfg.get("start", "new_game")
     save_back, existing = None, None
     if mode == "continue":
         save_back = SAVES / game / "continue.sav"
@@ -137,12 +135,6 @@ def plan_start(config: dict) -> dict:
     elif mode == "slots":
         save_back, existing = _choose_slot(game)
 
-    if start != "new_game":
-        checkpoint = CHECKPOINTS / game / f"{start}.sav"
-        if not checkpoint.exists():
-            say(f"There is no {game.title()} checkpoint named '{start}' in checkpoints/{game}/.")
-            sys.exit(1)
-        return {"label": f"checkpoint:{start}", "save_file": checkpoint, "save_back": save_back}
     if existing is not None:
         return {"label": "save", "save_file": existing, "save_back": save_back}
     return {"label": "new_game", "save_file": None, "save_back": save_back}
@@ -242,7 +234,7 @@ class Run:
             Path(back).parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(sav, back)
         self.folder.event({"event": "saved", "turn": self.state["turn"],
-                           "checkpoints": list(keep_as)})
+                           "milestone_saves": list(keep_as)})
         return True
 
     async def save_when_possible(self, keep_as: list[str] = ()) -> bool:

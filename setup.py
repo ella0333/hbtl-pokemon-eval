@@ -185,16 +185,6 @@ def _ask_config() -> dict:
     target = _choice("Where should the run end?",
                      [(m, MILESTONE_LABELS[m]) for m in MILESTONES], "pokedex")
 
-    start = "new_game"
-    checkpoints = sorted((ROOT / "checkpoints" / game).glob("*.sav"))
-    checkpoints = [c for c in checkpoints
-                   if c.stem in MILESTONES and MILESTONES.index(c.stem) < MILESTONES.index(target)]
-    if checkpoints:
-        start = _choice("Where should the run start?",
-                        [("new_game", "A new game")]
-                        + [(c.stem, f"The {MILESTONE_LABELS[c.stem]} checkpoint") for c in checkpoints],
-                        "new_game")
-
     save_mode = _choice(
         "How should saves carry over between runs?",
         [("new", "Start a new game every run"),
@@ -217,7 +207,7 @@ def _ask_config() -> dict:
         "game": game,
         "rom": str(rom.resolve()),
         "hints": hints_on,
-        "run": {"call_cap": call_cap, "target": target, "start": start, "save_mode": save_mode},
+        "run": {"call_cap": call_cap, "target": target, "save_mode": save_mode},
     }
 
 

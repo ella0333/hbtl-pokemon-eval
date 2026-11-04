@@ -21,5 +21,4 @@ hints: []                                  # any of: navigation, stuck_notes, ba
 run:
   call_cap: 1000
   target: pokedex                          # pokedex, badge_1 ... badge_8, hall_of_fame
-  start: new_game                          # new_game, or a checkpoint name like badge_2
   save_mode: new                           # new, continue, or slots

@@ -16,12 +16,11 @@ config.yaml
 /results/
 /saves/
 
-# ROMs and save files (checkpoints and submitted runs keep theirs)
+# ROMs and save files (submitted runs keep theirs)
 *.gb
 *.gbc
 *.gba
 *.sav
-!checkpoints/**/*.sav
 !submissions/**/*.sav
 *.sgm
 

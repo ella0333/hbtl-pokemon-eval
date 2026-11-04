@@ -55,9 +55,9 @@ number of Hall of Fame teams. A milestone counts once two reads in a row show it
 nothing the model says is taken into account.
 
 When a milestone is reached the harness saves in-game at the next plain overworld screen
-and keeps that save in the run folder, so later stretches of the game can be benchmarked
-from it. Checkpoints made this way go in `checkpoints/red/` or `checkpoints/blue/`, named
-after the milestone (for example `badge_2.sav`), and setup offers them as starting points.
+and keeps that save in the run folder's `saves/`, named after the milestone (for example
+`badge_2.sav`). Runs for the leaderboard always start from a new game. Your own saves can be
+used for your own runs through the continue and slot save modes.
 
 ## Saves, pausing and resuming
 
@@ -90,7 +90,8 @@ call and what the full call cap would cost at that rate.
 ## Scoring
 
 A run is a success when its target milestone is read from memory before it reaches the
-call cap. The leaderboard lists successful runs first, then later targets, then fewer
+call cap. The leaderboard groups runs by game and target, since only runs of the same
+stretch can be compared, and within each group lists successful runs first, then fewer
 calls and lower cost. Every call the model answered counts, including answers that were
 rejected and asked again.
 
