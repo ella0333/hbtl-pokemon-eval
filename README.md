@@ -14,6 +14,10 @@ can be run through the same framework and compared.
 
 ## Quick start
 
+The benchmark runs on Windows. Before you start, have your own Pokemon Red or Blue ROM
+ready (the USA, Europe release), since setup asks for its location. Setup checks the file
+and downloads everything else.
+
 ```bash
 git clone https://github.com/ella0333/hbtl-pokemon-eval.git
 cd hbtl-pokemon-eval
@@ -23,9 +27,6 @@ pip install -r requirements.txt
 python setup.py    # model, game and run settings, then downloads the emulator
 python run.py
 ```
-
-The benchmark runs on Windows, and you need your own Pokemon Red or Blue ROM (the USA,
-Europe release). Setup checks the file and downloads everything else.
 
 Press `Ctrl+C` to save and pause a run. Running `python run.py` again offers to resume it.
 
