@@ -12,25 +12,6 @@ trade task reliability or capability for the security improvements it guarantees
 This repo is a benchmark based on the Pokemon experimental setup from the paper, so any
 LLM can be run through the same framework and compared.
 
-## How it works
-
-The LLM is presented with a multiple-choice menu and generates a JSON output constrained
-to those choices. The menu system is designed as a Hierarchical Extended Finite State
-Machine with nested submenus that lead to the final action through various LLM decisions.
-
-Final menu choices are bound to pre-written deterministic Python scripts that execute the
-intended action. This simplifies the decisions the LLM makes, pairing the classification
-strengths of LLMs with the reliability and predictability of well-developed code, and
-replaces the need for the model to string together complex tool calls directly.
-
-## Model requirements
-
-Any instruct model served through an OpenAI-compatible API (`/v1/chat/completions`) will
-work, as long as it supports **structured output** (JSON schema responses) and **custom
-system prompts**. Models without structured output are not compatible. Setup runs a
-connection check at the end to confirm your model returns valid JSON, and auto-corrects
-common issues (wrong model name format, unsupported parameters).
-
 ## Quick start
 
 ```bash
@@ -50,6 +31,25 @@ Press `Ctrl+C` to save and pause a run. Running `python run.py` again offers to 
 
 Looking for which models work? See the **[Model Options Guide](docs/models.md)** for
 backends, requirements, and configuration.
+
+## How it works
+
+The LLM is presented with a multiple-choice menu and generates a JSON output constrained
+to those choices. The menu system is designed as a Hierarchical Extended Finite State
+Machine with nested submenus that lead to the final action through various LLM decisions.
+
+Final menu choices are bound to pre-written deterministic Python scripts that execute the
+intended action. This simplifies the decisions the LLM makes, pairing the classification
+strengths of LLMs with the reliability and predictability of well-developed code, and
+replaces the need for the model to string together complex tool calls directly.
+
+## Model requirements
+
+Any instruct model served through an OpenAI-compatible API (`/v1/chat/completions`) will
+work, as long as it supports **structured output** (JSON schema responses) and **custom
+system prompts**. Models without structured output are not compatible. Setup runs a
+connection check at the end to confirm your model returns valid JSON, and auto-corrects
+common issues (wrong model name format, unsupported parameters).
 
 ## Leaderboard
 
