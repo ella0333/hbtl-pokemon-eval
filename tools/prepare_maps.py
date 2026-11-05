@@ -1,5 +1,5 @@
 r"""
-prepare_maps.py — Build complete map database from pret/pokered source data.
+prepare_maps.py - Build complete map database from pret/pokered source data.
 
 Downloads the pokered repo once (pinned to one commit), then extracts:
   - Map dimensions + tileset IDs from constants/headers
